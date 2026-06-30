@@ -10,10 +10,10 @@ down:
 
 
 migrate-up:
-	migrate -path migrations/ -database "$(DB_URL)" up
+	migrate -path services/core/migrations/ -database "$(DB_URL)" up
 
 migrate-down:
-	migrate -path migrations/ -database "$(DB_URL)" down
+	migrate -path services/core/migrations/ -database "$(DB_URL)" down
 
 migrate-version:
-	migrate -path migrations/ -database "$(DB_URL)" version
+	migrate -path services/core/migrations/ -database "$(DB_URL)" version

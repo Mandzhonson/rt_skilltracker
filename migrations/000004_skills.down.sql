@@ -1,2 +1,0 @@
-DROP TABLE IF EXISTS employee_skills;
-DROP TABLE IF EXISTS skills;

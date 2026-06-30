@@ -1,4 +1,0 @@
-DROP TABLE IF EXISTS test_answers;
-DROP TABLE IF EXISTS test_attempts;
-DROP TABLE IF EXISTS test_questions;
-DROP TABLE IF EXISTS tests;
