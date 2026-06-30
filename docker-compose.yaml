@@ -57,7 +57,23 @@ services:
       retries: 3
     networks:
       - skilltracker-network
-
+  core:
+    build: 
+      context: ./services/core
+      dockerfile: Dockerfile
+    container_name: skilltracker-core
+    env_file:
+      - ".env"
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy      
+    networks:
+      - skilltracker-network
 networks:
   skilltracker-network:
     driver: bridge

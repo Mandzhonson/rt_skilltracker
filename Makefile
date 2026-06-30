@@ -4,7 +4,7 @@ export
 DB_URL=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/$(POSTGRES_DB)?sslmode=disable
 
 up:
-	docker-compose up
+	docker-compose up --build
 down:
 	docker-compose down
 
