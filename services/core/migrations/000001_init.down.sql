@@ -1,0 +1,25 @@
+DROP TABLE IF EXISTS test_answers;
+
+DROP TABLE IF EXISTS test_attempts;
+
+DROP TABLE IF EXISTS test_questions;
+
+DROP TABLE IF EXISTS tests;
+
+DROP TABLE IF EXISTS questions;
+
+DROP TABLE IF EXISTS task_comments;
+
+DROP TABLE IF EXISTS tasks;
+
+DROP TABLE IF EXISTS plans;
+
+DROP TABLE IF EXISTS user_skills;
+
+DROP TABLE IF EXISTS skills;
+
+DROP TABLE IF EXISTS blacklisted_tokens;
+
+DROP TABLE IF EXISTS refresh_tokens;
+
+DROP TABLE IF EXISTS users;

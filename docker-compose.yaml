@@ -62,6 +62,8 @@ services:
       context: ./services/core
       dockerfile: Dockerfile
     container_name: skilltracker-core
+    ports:
+      - "8080:8080"
     env_file:
       - ".env"
     restart: unless-stopped

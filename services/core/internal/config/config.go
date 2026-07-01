@@ -14,6 +14,7 @@ type Config struct {
 	Postgres PostgresConfig
 	Redis    RedisConfig
 	Minio    MinioConfig
+	JWT      JWTConfig
 }
 
 type HTTPConfig struct {
@@ -45,6 +46,13 @@ type MinioConfig struct {
 	Port     string `env:"MINIO_API_PORT" env-default:"9000"`
 }
 
+type JWTConfig struct {
+	AccessSecret  string        `env:"JWT_ACCESS_SECRET" env-required:"true"`
+	RefreshSecret string        `env:"JWT_REFRESH_SECRET" env-required:"true"`
+	AccessTTL     time.Duration `env:"JWT_ACCESS_TTL" env-default:"15m"`
+	RefreshTTL    time.Duration `env:"JWT_REFRESH_TTL" env-default:"168h"`
+}
+
 func Load() (*Config, error) {
 	cfg := &Config{}
 	if err := cleanenv.ReadConfig(configPath, cfg); err != nil {
@@ -56,5 +64,5 @@ func Load() (*Config, error) {
 }
 
 func (cfg Config) PostgresDSN() string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s",cfg.Postgres.User,cfg.Postgres.Password,cfg.Postgres.Host,cfg.Postgres.Port,cfg.Postgres.Name)
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", cfg.Postgres.User, cfg.Postgres.Password, cfg.Postgres.Host, cfg.Postgres.Port, cfg.Postgres.Name)
 }
