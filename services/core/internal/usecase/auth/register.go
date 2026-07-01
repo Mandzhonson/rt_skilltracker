@@ -19,12 +19,11 @@ var (
 	ErrInvalidName       = errors.New("first name and last name are required")
 )
 
-
 type authService struct {
-	repo postgres.UserRepository
+	repo postgres.AuthRepository
 }
 
-func NewAuthService(repo postgres.UserRepository) *authService {
+func NewAuthService(repo postgres.AuthRepository) *authService {
 	return &authService{
 		repo: repo,
 	}
@@ -34,23 +33,19 @@ func (s *authService) CreateUser(ctx context.Context, u *domain.User) (uuid.UUID
 	if err := validateUser(u); err != nil {
 		return uuid.Nil, err
 	}
-
-	// existingUser, err := s.repo.GetByEmail(ctx, u.Email)
-	// if err == nil && existingUser != nil {
-	// 	return uuid.Nil, ErrUserAlreadyExists
-	// }
-
+	existingUser, err := s.repo.GetByEmail(ctx, u.Email)
+	if err == nil && existingUser != nil {
+		return uuid.Nil, ErrUserAlreadyExists
+	}
 	hashedPassword, err := hashPassword(u.PasswordHash)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 	u.PasswordHash = hashedPassword
-
 	id, err := s.repo.Create(ctx, u)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create user: %w", err)
 	}
-
 	return id, nil
 }
 
@@ -58,19 +53,15 @@ func validateUser(u *domain.User) error {
 	if u == nil {
 		return errors.New("user cannot be nil")
 	}
-
 	if !isValidEmail(u.Email) {
 		return ErrInvalidEmail
 	}
-
 	if len(u.PasswordHash) < 8 {
 		return ErrInvalidPassword
 	}
-
 	if u.FirstName == "" || u.LastName == "" {
 		return ErrInvalidName
 	}
-
 	return nil
 }
 

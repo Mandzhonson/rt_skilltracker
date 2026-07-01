@@ -5,10 +5,10 @@ import (
 	"core_service/internal/clients/postgres"
 	"core_service/internal/clients/redis"
 	"core_service/internal/config"
-	authpostgres "core_service/internal/repository/postgres"
-	httptransport "core_service/internal/transport/http"
-	authhandler "core_service/internal/transport/http/handler"
-	authusecase "core_service/internal/usecase/auth"
+	postgresRepository "core_service/internal/repository/postgres"
+	router "core_service/internal/transport/http"
+	"core_service/internal/transport/http/handler"
+	"core_service/internal/usecase/auth"
 	"fmt"
 	"net/http"
 	"os/signal"
@@ -42,13 +42,13 @@ func Run() error {
 
 	_ = rdb // пока не используется
 
-	userRepository := authpostgres.NewUserRepository(pool)
+	authRepository := postgresRepository.NewAuthRepository(pool)
 
-	authService := authusecase.NewAuthService(userRepository)
+	authService := auth.NewAuthService(authRepository)
 
-	authHandler := authhandler.NewAuthHandler(authService)
+	authHandler := handler.NewAuthHandler(authService)
 
-	router := httptransport.NewRouter(authHandler)
+	router := router.NewRouter(authHandler)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%s", cfg.HTTP.Host, cfg.HTTP.Port),

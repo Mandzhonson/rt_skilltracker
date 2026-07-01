@@ -1,4 +1,4 @@
-package http
+package router
 
 import (
 	"core_service/internal/transport/http/handler"
