@@ -99,5 +99,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		}
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken})
+	c.JSON(http.StatusOK, dto.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
 }
