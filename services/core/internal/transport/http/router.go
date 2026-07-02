@@ -19,6 +19,7 @@ func NewRouter(
 		auth := api.Group("/auth")
 		{
 			auth.POST("/register", authHandler.CreateUser)
+			auth.POST("/login", authHandler.Login)
 		}
 	}
 

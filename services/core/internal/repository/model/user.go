@@ -1,9 +1,13 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type UserModel struct {
-	ID           string    `db:"id"`
+	ID           uuid.UUID `db:"id"`
 	Email        string    `db:"email"`
 	PasswordHash string    `db:"password_hash"`
 	FirstName    string    `db:"first_name"`

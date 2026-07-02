@@ -5,6 +5,7 @@ import (
 	"core_service/internal/clients/postgres"
 	"core_service/internal/clients/redis"
 	"core_service/internal/config"
+	"core_service/internal/pkg/jwt"
 	postgresRepository "core_service/internal/repository/postgres"
 	router "core_service/internal/transport/http"
 	"core_service/internal/transport/http/handler"
@@ -41,10 +42,10 @@ func Run() error {
 	defer rdb.Close()
 
 	_ = rdb // пока не используется
-
+	jwtService := jwt.NewJWTService(cfg.JWT)
 	authRepository := postgresRepository.NewAuthRepository(pool)
 
-	authService := auth.NewAuthService(authRepository)
+	authService := auth.NewAuthService(authRepository, *jwtService)
 
 	authHandler := handler.NewAuthHandler(authService)
 

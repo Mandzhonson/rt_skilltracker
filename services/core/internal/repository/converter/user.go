@@ -32,3 +32,4 @@ func ToUserModel(m *domain.User) *model.UserModel {
 		UpdatedAt:    m.UpdatedAt,
 	}
 }
+

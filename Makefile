@@ -8,6 +8,8 @@ up:
 down:
 	docker-compose down
 
+clear:
+	docker-compose down -v
 
 migrate-up:
 	migrate -path services/core/migrations/ -database "$(DB_URL)" up
