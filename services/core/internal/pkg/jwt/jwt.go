@@ -85,7 +85,7 @@ func (c *JWTService) ParseRefreshToken(token string) (*Claims, error) {
 }
 
 func (c *JWTService) parse(tokenString string, secret []byte) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		if token.Method != jwt.SigningMethodHS256 {
 			return nil, ErrTokenInvalid
 		}

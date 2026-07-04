@@ -12,4 +12,6 @@ type AuthRepository interface {
 	GetById(ctx context.Context, id uuid.UUID) (*domain.User, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	SaveRefreshToken(ctx context.Context, e domain.RefreshToken) error
+	GetRefreshToken(ctx context.Context, jti string) (*domain.RefreshToken, error)
+	DeleteRefreshToken(ctx context.Context, jti string) error
 }

@@ -3,6 +3,7 @@ package auth
 import (
 	"core_service/internal/pkg/jwt"
 	"core_service/internal/repository/postgres"
+	"core_service/internal/repository/redis"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -20,14 +21,16 @@ var (
 )
 
 type authService struct {
-	repo postgres.AuthRepository
-	jwt  jwt.JWTService
+	repo  postgres.AuthRepository
+	jwt   *jwt.JWTService
+	redis redis.SessionRepository
 }
 
-func NewAuthService(repo postgres.AuthRepository, jwt jwt.JWTService) *authService {
+func NewAuthService(repo postgres.AuthRepository, jwt *jwt.JWTService, r redis.SessionRepository) *authService {
 	return &authService{
-		repo: repo,
-		jwt:  jwt,
+		repo:  repo,
+		jwt:   jwt,
+		redis: r,
 	}
 }
 

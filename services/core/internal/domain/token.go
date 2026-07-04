@@ -11,4 +11,5 @@ type RefreshToken struct {
 	JTI       string
 	TokenHash string
 	ExpiresAt time.Time
+	Revoked   bool
 }

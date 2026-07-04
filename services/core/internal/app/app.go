@@ -7,8 +7,10 @@ import (
 	"core_service/internal/config"
 	"core_service/internal/pkg/jwt"
 	postgresRepository "core_service/internal/repository/postgres"
+	redisRepository "core_service/internal/repository/redis"
 	router "core_service/internal/transport/http"
 	"core_service/internal/transport/http/handler"
+	"core_service/internal/transport/http/middleware"
 	"core_service/internal/usecase/auth"
 	"fmt"
 	"net/http"
@@ -41,15 +43,15 @@ func Run() error {
 	}
 	defer rdb.Close()
 
-	_ = rdb // пока не используется
 	jwtService := jwt.NewJWTService(cfg.JWT)
+	sessionRepository := redisRepository.NewRedisSessionRepository(rdb)
 	authRepository := postgresRepository.NewAuthRepository(pool)
 
-	authService := auth.NewAuthService(authRepository, *jwtService)
+	authService := auth.NewAuthService(authRepository, jwtService, sessionRepository)
 
 	authHandler := handler.NewAuthHandler(authService)
-
-	router := router.NewRouter(authHandler)
+	authMiddleware := middleware.AuthMiddleware(jwtService, sessionRepository)
+	router := router.NewRouter(authHandler, authMiddleware)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%s", cfg.HTTP.Host, cfg.HTTP.Port),

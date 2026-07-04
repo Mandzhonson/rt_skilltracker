@@ -17,11 +17,12 @@ func ToRefreshTokenModel(d domain.RefreshToken) model.RefreshTokenModel {
 	}
 }
 
-func ToRefreshTokenEntity(m model.RefreshTokenModel) domain.RefreshToken {
-	return domain.RefreshToken{
+func ToRefreshTokenEntity(m *model.RefreshTokenModel) *domain.RefreshToken {
+	return &domain.RefreshToken{
 		UserID:    m.UserID,
 		JTI:       m.JTI,
 		TokenHash: m.TokenHash,
 		ExpiresAt: m.ExpiresAt,
+		Revoked:   m.Revoked,
 	}
 }

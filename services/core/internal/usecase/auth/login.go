@@ -23,11 +23,13 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 	if err != nil {
 		return "", "", err
 	}
-
-	if err := s.storeRefreshSession(ctx, user.ID, refreshToken, jti); err != nil {
+	hash := hashRefreshToken(refreshToken)
+	if err := s.storeRefreshSession(ctx, user.ID, hash, jti); err != nil {
 		return "", "", err
 	}
-
+	if err := s.redis.SaveSession(ctx, jti, user.ID, hash, s.jwt.RefreshTTL()); err != nil {
+		return "", "", err
+	}
 	return accessToken, refreshToken, nil
 }
 
@@ -62,9 +64,7 @@ func (s *authService) generateTokens(user *domain.User) (accessToken string, ref
 	return accessToken, refreshToken, jti, nil
 }
 
-func (s *authService) storeRefreshSession(ctx context.Context, userID uuid.UUID, refreshToken string, jti string) error {
-
-	hashToken := hashRefreshToken(refreshToken)
+func (s *authService) storeRefreshSession(ctx context.Context, userID uuid.UUID, hashToken string, jti string) error {
 
 	now := time.Now().UTC()
 
