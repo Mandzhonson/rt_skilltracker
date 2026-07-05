@@ -17,6 +17,7 @@ type UserService interface {
 	CreateUser(ctx context.Context, u *domain.User) (uuid.UUID, error)
 	GetProfile(ctx context.Context, userID uuid.UUID) (*domain.User, error)
 	UpdateProfile(ctx context.Context, upd user.UpdateProfileInput) error
+	UpdatePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error
 }
 
 type UserHandler struct {
@@ -174,5 +175,32 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
+	c.Status(http.StatusOK)
+}
+
+func (h *UserHandler) UpdatePassword(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	var req dto.UpdatePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	if err := h.service.UpdatePassword(c.Request.Context(), userID, req.OldPassword, req.NewPassword); err != nil {
+		switch {
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, user.ErrInvalidPassword),
+			errors.Is(err, user.ErrInvalidCredentials):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
 	c.Status(http.StatusOK)
 }

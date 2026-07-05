@@ -122,3 +122,12 @@ func (r *userRepository) UpdateProfile(ctx context.Context, userID uuid.UUID, up
 
 	return nil
 }
+
+func (r *userRepository) UpdatePassword(ctx context.Context, userID uuid.UUID, hashPassword string) error {
+	query := `UPDATE users SET password_hash=$1, updated_at=NOW() WHERE id=$2`
+	_, err := r.pool.Exec(ctx, query, hashPassword, userID)
+	if err != nil {
+		return fmt.Errorf("repository.UpdatePassword(user): %w", err)
+	}
+	return nil
+}

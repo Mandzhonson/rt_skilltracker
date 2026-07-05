@@ -33,7 +33,7 @@ func NewRouter(
 			user.Use(authMiddleware)
 			user.GET("/me", userHandler.GetProfile)
 			user.PATCH("/me", userHandler.UpdateProfile)
-			user.PATCH("/me/password") // TODO
+			user.PATCH("/me/password", userHandler.UpdatePassword)
 		}
 	}
 
