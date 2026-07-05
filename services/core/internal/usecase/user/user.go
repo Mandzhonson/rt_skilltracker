@@ -13,6 +13,7 @@ var (
 	ErrInvalidEmail      = errors.New("invalid email format")
 	ErrInvalidPassword   = errors.New("password must be at least 8 characters long")
 	ErrInvalidName       = errors.New("first name and last name are required")
+	ErrNoContent         = errors.New("no content")
 	ErrUserNotFound      = errors.New("user not found")
 )
 

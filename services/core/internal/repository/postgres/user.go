@@ -7,6 +7,8 @@ import (
 	"core_service/internal/repository/model"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -76,4 +78,47 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*domain.Use
 		return nil, fmt.Errorf("repository.GetByEmail(user): %w", err)
 	}
 	return converter.ToUserEntity(&m), nil
+}
+
+func (r *userRepository) UpdateProfile(ctx context.Context, userID uuid.UUID, update *domain.UpdateUserProfile) error {
+	args := []any{}
+	setClauses := []string{}
+	i := 1
+
+	if update.Email != nil {
+		setClauses = append(setClauses, fmt.Sprintf("email=$%d", i))
+		args = append(args, *update.Email)
+		i++
+	}
+
+	if update.FirstName != nil {
+		setClauses = append(setClauses, fmt.Sprintf("first_name=$%d", i))
+		args = append(args, *update.FirstName)
+		i++
+	}
+
+	if update.LastName != nil {
+		setClauses = append(setClauses, fmt.Sprintf("last_name=$%d", i))
+		args = append(args, *update.LastName)
+		i++
+	}
+
+	setClauses = append(setClauses, fmt.Sprintf("updated_at=$%d", i))
+	args = append(args, time.Now())
+	i++
+
+	args = append(args, userID)
+
+	query := fmt.Sprintf(
+		"UPDATE users SET %s WHERE id=$%d",
+		strings.Join(setClauses, ", "),
+		i,
+	)
+
+	_, err := r.pool.Exec(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("repository.UpdateProfile(user): %w", err)
+	}
+
+	return nil
 }

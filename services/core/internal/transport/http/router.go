@@ -31,9 +31,9 @@ func NewRouter(
 		user := api.Group("/users")
 		{
 			user.Use(authMiddleware)
-			user.GET("/me", userHandler.GetProfile) // TODO
-			user.PATCH("/me")                       // TODO
-			user.PATCH("/me/password")              // TODO
+			user.GET("/me", userHandler.GetProfile)
+			user.PATCH("/me", userHandler.UpdateProfile)
+			user.PATCH("/me/password") // TODO
 		}
 	}
 
