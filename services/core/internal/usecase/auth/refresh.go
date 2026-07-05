@@ -32,7 +32,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (string,
 		if !errors.Is(err, redis.ErrSessionNotFound) {
 			return "", "", err
 		}
-		token, err := s.repo.GetRefreshToken(ctx, claims.ID)
+		token, err := s.authRepo.GetRefreshToken(ctx, claims.ID)
 		if err != nil {
 			if errors.Is(err, postgres.ErrRefreshTokenNotFound) {
 				return "", "", ErrInvalidRefreshToken
@@ -64,7 +64,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (string,
 		return "", "", ErrInvalidCredentials
 	}
 
-	user, err := s.repo.GetById(ctx, userID)
+	user, err := s.userRepo.GetById(ctx, userID)
 	if err != nil {
 		return "", "", err
 	}
@@ -81,7 +81,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (string,
 
 	newHash := hashRefreshToken(newRefresh)
 
-	if err := s.repo.DeleteRefreshToken(ctx, claims.ID); err != nil {
+	if err := s.authRepo.DeleteRefreshToken(ctx, claims.ID); err != nil {
 		return "", "", err
 	}
 
@@ -96,7 +96,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (string,
 		ExpiresAt: time.Now().Add(s.jwt.RefreshTTL()),
 	}
 
-	if err := s.repo.SaveRefreshToken(ctx, entity); err != nil {
+	if err := s.authRepo.SaveRefreshToken(ctx, entity); err != nil {
 		return "", "", err
 	}
 

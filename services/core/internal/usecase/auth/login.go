@@ -34,7 +34,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 }
 
 func (s *authService) authenticateUser(ctx context.Context, email, password string) (*domain.User, error) {
-	user, err := s.repo.GetByEmail(ctx, email)
+	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, postgres.ErrUserNotFound) {
 			return nil, ErrInvalidCredentials
@@ -75,7 +75,7 @@ func (s *authService) storeRefreshSession(ctx context.Context, userID uuid.UUID,
 		ExpiresAt: now.Add(s.jwt.RefreshTTL()),
 	}
 
-	if err := s.repo.SaveRefreshToken(ctx, entity); err != nil {
+	if err := s.authRepo.SaveRefreshToken(ctx, entity); err != nil {
 		return fmt.Errorf("save refresh token: %w", err)
 	}
 

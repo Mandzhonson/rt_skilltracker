@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"core_service/internal/domain"
 	"core_service/internal/pkg/jwt"
 	"core_service/internal/transport/http/dto"
 	"core_service/internal/transport/http/middleware"
@@ -11,11 +10,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type AuthService interface {
-	CreateUser(ctx context.Context, u *domain.User) (uuid.UUID, error)
 	Login(ctx context.Context, email, password string) (string, string, error)
 	Refresh(ctx context.Context, refreshToken string) (string, string, error)
 	Logout(ctx context.Context, claimsAccess *jwt.Claims, refreshToken string) error
@@ -29,55 +26,6 @@ func NewAuthHandler(service AuthService) *AuthHandler {
 	return &AuthHandler{
 		service: service,
 	}
-}
-
-func (h *AuthHandler) CreateUser(c *gin.Context) {
-	var req dto.RegisterRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
-		})
-		return
-	}
-
-	user := &domain.User{
-		Email:        req.Email,
-		PasswordHash: req.Password,
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
-	}
-
-	id, err := h.service.CreateUser(c.Request.Context(), user)
-	if err != nil {
-
-		switch {
-
-		case errors.Is(err, auth.ErrUserAlreadyExists):
-			c.JSON(http.StatusConflict, gin.H{
-				"error": err.Error(),
-			})
-
-		case errors.Is(err, auth.ErrInvalidEmail),
-			errors.Is(err, auth.ErrInvalidPassword),
-			errors.Is(err, auth.ErrInvalidName):
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
-			})
-		}
-
-		return
-	}
-
-	c.JSON(http.StatusCreated, dto.RegisterResponse{
-		ID: id.String(),
-	})
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {

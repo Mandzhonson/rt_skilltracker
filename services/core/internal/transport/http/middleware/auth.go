@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func AuthMiddleware(jc *jwt.JWTService, blackListService redis.SessionRepository) gin.HandlerFunc {
@@ -36,7 +37,14 @@ func AuthMiddleware(jc *jwt.JWTService, blackListService redis.SessionRepository
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		userID, err := uuid.Parse(claims.Subject)
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
 		c.Set("claims", claims)
+		c.Set("userID", userID)
+
 		c.Next()
 	}
 }

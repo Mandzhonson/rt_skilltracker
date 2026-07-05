@@ -17,3 +17,9 @@ type User struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
+
+type UpdateUserProfile struct {
+	Email     *string
+	FirstName *string
+	LastName  *string
+}

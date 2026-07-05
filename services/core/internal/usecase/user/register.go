@@ -1,4 +1,4 @@
-package auth
+package user
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *authService) CreateUser(ctx context.Context, u *domain.User) (uuid.UUID, error) {
+func (s *userService) CreateUser(ctx context.Context, u *domain.User) (uuid.UUID, error) {
 	if err := validateUser(u); err != nil {
 		return uuid.Nil, err
 	}
 
-	_, err := s.repo.GetByEmail(ctx, u.Email)
+	_, err := s.userRepo.GetByEmail(ctx, u.Email)
 	switch {
 	case err == nil:
 		return uuid.Nil, ErrUserAlreadyExists
@@ -31,7 +31,7 @@ func (s *authService) CreateUser(ctx context.Context, u *domain.User) (uuid.UUID
 
 	u.PasswordHash = hashedPassword
 
-	id, err := s.repo.Create(ctx, u)
+	id, err := s.userRepo.Create(ctx, u)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create user: %w", err)
 	}

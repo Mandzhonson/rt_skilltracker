@@ -20,7 +20,7 @@ func (s *authService) Logout(ctx context.Context, claimsAccess *jwt.Claims, refr
 		return ErrInvalidCredentials
 	}
 
-	if err := s.repo.DeleteRefreshToken(ctx, claimsRefresh.ID); err != nil &&
+	if err := s.authRepo.DeleteRefreshToken(ctx, claimsRefresh.ID); err != nil &&
 		!errors.Is(err, postgres.ErrRefreshTokenNotFound) {
 		return err
 	}

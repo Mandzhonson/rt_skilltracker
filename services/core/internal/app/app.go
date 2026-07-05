@@ -12,6 +12,7 @@ import (
 	"core_service/internal/transport/http/handler"
 	"core_service/internal/transport/http/middleware"
 	"core_service/internal/usecase/auth"
+	"core_service/internal/usecase/user"
 	"fmt"
 	"net/http"
 	"os/signal"
@@ -43,15 +44,18 @@ func Run() error {
 	}
 	defer rdb.Close()
 
-	jwtService := jwt.NewJWTService(cfg.JWT)
 	sessionRepository := redisRepository.NewRedisSessionRepository(rdb)
+	userRepository := postgresRepository.NewUserRepository(pool)
 	authRepository := postgresRepository.NewAuthRepository(pool)
 
-	authService := auth.NewAuthService(authRepository, jwtService, sessionRepository)
+	jwtService := jwt.NewJWTService(cfg.JWT)
+	authService := auth.NewAuthService(authRepository, userRepository, jwtService, sessionRepository)
+	userService := user.NewUserService(userRepository)
 
 	authHandler := handler.NewAuthHandler(authService)
+	userHandler := handler.NewUserHandler(userService)
 	authMiddleware := middleware.AuthMiddleware(jwtService, sessionRepository)
-	router := router.NewRouter(authHandler, authMiddleware)
+	router := router.NewRouter(authHandler, userHandler, authMiddleware)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%s", cfg.HTTP.Host, cfg.HTTP.Port),

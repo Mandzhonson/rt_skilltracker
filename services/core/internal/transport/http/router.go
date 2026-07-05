@@ -8,6 +8,7 @@ import (
 
 func NewRouter(
 	authHandler *handler.AuthHandler,
+	userHandler *handler.UserHandler,
 	authMiddleware gin.HandlerFunc) *gin.Engine {
 	router := gin.New()
 
@@ -18,7 +19,7 @@ func NewRouter(
 	{
 		auth := api.Group("/auth")
 		{
-			auth.POST("/register", authHandler.CreateUser)
+			auth.POST("/register", userHandler.CreateUser)
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/refresh", authHandler.Refresh)
 			protected := auth.Group("")
@@ -26,6 +27,13 @@ func NewRouter(
 			{
 				protected.POST("/logout", authHandler.Logout)
 			}
+		}
+		user := api.Group("/users")
+		{
+			user.Use(authMiddleware)
+			user.GET("/me", userHandler.GetProfile) // TODO
+			user.PATCH("/me")                       // TODO
+			user.PATCH("/me/password")              // TODO
 		}
 	}
 
