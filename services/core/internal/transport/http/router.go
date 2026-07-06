@@ -34,6 +34,10 @@ func NewRouter(
 			user.GET("/me", userHandler.GetProfile)
 			user.PATCH("/me", userHandler.UpdateProfile)
 			user.PATCH("/me/password", userHandler.UpdatePassword)
+
+			user.PUT("/me/avatar", userHandler.SetAvatar)
+			user.GET("/me/avatar", userHandler.GetAvatar)
+			user.DELETE("/me/avatar", userHandler.DeleteAvatar)
 		}
 	}
 

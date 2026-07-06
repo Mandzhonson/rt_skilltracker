@@ -7,6 +7,7 @@ import (
 	"core_service/internal/transport/http/middleware"
 	"core_service/internal/usecase/user"
 	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,9 @@ type UserService interface {
 	GetProfile(ctx context.Context, userID uuid.UUID) (*domain.User, error)
 	UpdateProfile(ctx context.Context, upd user.UpdateProfileInput) error
 	UpdatePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error
+	SetAvatar(ctx context.Context, input user.SetAvatarInput) error
+	GetAvatar(ctx context.Context, userID uuid.UUID) (io.ReadCloser, string, error)
+	DeleteAvatar(ctx context.Context, userID uuid.UUID) error
 }
 
 type UserHandler struct {
@@ -203,4 +207,123 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
+}
+
+func (h *UserHandler) SetAvatar(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "unauthorized",
+		})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("avatar")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "file is required",
+		})
+		return
+	}
+	defer file.Close()
+
+	input := user.SetAvatarInput{
+		UserID:      userID,
+		File:        file,
+		Size:        header.Size,
+		ContentType: header.Header.Get("Content-Type"),
+	}
+
+	err = h.service.SetAvatar(c.Request.Context(), input)
+	if err != nil {
+		switch {
+		case errors.Is(err, user.ErrAvatarTooLarge),
+			errors.Is(err, user.ErrInvalidAvatarFormat):
+
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err.Error(),
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "internal server error",
+			})
+		}
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func (h *UserHandler) DeleteAvatar(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "unauthorized",
+		})
+		return
+	}
+
+	err := h.service.DeleteAvatar(c.Request.Context(), userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, user.ErrNoContent):
+			c.Status(http.StatusNoContent)
+
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err.Error(),
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "internal server error",
+			})
+		}
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func (h *UserHandler) GetAvatar(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "unauthorized",
+		})
+		return
+	}
+
+	reader, contentType, err := h.service.GetAvatar(c.Request.Context(), userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, user.ErrAvatarNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err.Error(),
+			})
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err.Error(),
+			})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "internal server error",
+			})
+		}
+		return
+	}
+	defer reader.Close()
+
+	c.Header("Content-Type", contentType)
+
+	_, err = io.Copy(c.Writer, reader)
+	if err != nil {
+		return
+	}
 }

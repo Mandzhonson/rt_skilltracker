@@ -44,6 +44,7 @@ type MinioConfig struct {
 	Password string `env:"MINIO_ROOT_PASSWORD" env-required:"true"`
 	Host     string `env:"MINIO_HOST" env-required:"true"`
 	Port     string `env:"MINIO_API_PORT" env-default:"9000"`
+	Bucket   string `env:"MINIO_BUCKET" env-required:"true"`
 }
 
 type JWTConfig struct {

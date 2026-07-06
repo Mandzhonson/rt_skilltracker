@@ -47,6 +47,7 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MINIO_HOST=${MINIO_HOST}
+      - MINIO_DEFAULT_BUCKETS=${MINIO_BUCKET}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"

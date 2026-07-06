@@ -40,7 +40,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 	var m model.UserModel
 
 	query := `
-	SELECT id, email, password_hash, first_name, last_name, role, manager_id, created_at, updated_at
+	SELECT id, email, password_hash, first_name, last_name, avatar_key, role, manager_id, created_at, updated_at
 	FROM users
 	WHERE email = $1`
 
@@ -50,6 +50,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 		&m.PasswordHash,
 		&m.FirstName,
 		&m.LastName,
+		&m.AvatarKey,
 		&m.Role,
 		&m.ManagerID,
 		&m.CreatedAt,
@@ -68,10 +69,10 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 
 func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	var m model.UserModel
-	query := `SELECT id, email, password_hash, first_name, last_name, role, manager_id, created_at, updated_at
+	query := `SELECT id, email, password_hash, first_name, last_name, avatar_key, role, manager_id, created_at, updated_at
 	FROM users
 	WHERE id=$1`
-	if err := r.pool.QueryRow(ctx, query, id).Scan(&m.ID, &m.Email, &m.PasswordHash, &m.FirstName, &m.LastName, &m.Role, &m.ManagerID, &m.CreatedAt, &m.UpdatedAt); err != nil {
+	if err := r.pool.QueryRow(ctx, query, id).Scan(&m.ID, &m.Email, &m.PasswordHash, &m.FirstName, &m.LastName, &m.AvatarKey, &m.Role, &m.ManagerID, &m.CreatedAt, &m.UpdatedAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
@@ -129,5 +130,24 @@ func (r *userRepository) UpdatePassword(ctx context.Context, userID uuid.UUID, h
 	if err != nil {
 		return fmt.Errorf("repository.UpdatePassword(user): %w", err)
 	}
+	return nil
+}
+
+func (r *userRepository) UpdateAvatar(ctx context.Context, userID uuid.UUID, avatarKey *string) error {
+	query := `
+	UPDATE users
+	SET avatar_key = $1,
+	    updated_at = NOW()
+	WHERE id = $2`
+
+	cmd, err := r.pool.Exec(ctx, query, avatarKey, userID)
+	if err != nil {
+		return fmt.Errorf("repository.UpdateAvatar(user): %w", err)
+	}
+
+	if cmd.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
+
 	return nil
 }

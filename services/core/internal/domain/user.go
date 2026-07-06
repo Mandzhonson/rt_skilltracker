@@ -12,6 +12,7 @@ type User struct {
 	PasswordHash string
 	FirstName    string
 	LastName     string
+	AvatarKey    *string
 	Role         string
 	ManagerID    *string
 	CreatedAt    time.Time

@@ -2,11 +2,14 @@ package app
 
 import (
 	"context"
+	"core_service/internal/clients/minio"
 	"core_service/internal/clients/postgres"
 	"core_service/internal/clients/redis"
 	"core_service/internal/config"
 	"core_service/internal/pkg/jwt"
+	minioStorage "core_service/internal/repository/minio"
 	postgresRepository "core_service/internal/repository/postgres"
+
 	redisRepository "core_service/internal/repository/redis"
 	router "core_service/internal/transport/http"
 	"core_service/internal/transport/http/handler"
@@ -24,6 +27,7 @@ func Run() error {
 		context.Background(),
 		syscall.SIGINT,
 		syscall.SIGTERM,
+		syscall.SIGKILL,
 	)
 	defer cancel()
 
@@ -44,13 +48,19 @@ func Run() error {
 	}
 	defer rdb.Close()
 
+	minio, err := minio.InitMinio(ctx, cfg.Minio)
+	if err != nil {
+		return err
+	}
+
+	minioStorage := minioStorage.NewMinioStorage(minio, cfg.Minio.Bucket)
 	sessionRepository := redisRepository.NewRedisSessionRepository(rdb)
 	userRepository := postgresRepository.NewUserRepository(pool)
 	authRepository := postgresRepository.NewAuthRepository(pool)
 
 	jwtService := jwt.NewJWTService(cfg.JWT)
 	authService := auth.NewAuthService(authRepository, userRepository, jwtService, sessionRepository)
-	userService := user.NewUserService(userRepository)
+	userService := user.NewUserService(userRepository, minioStorage)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)

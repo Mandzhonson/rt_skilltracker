@@ -12,6 +12,7 @@ func ToUserEntity(m *model.UserModel) *domain.User {
 		PasswordHash: m.PasswordHash,
 		FirstName:    m.FirstName,
 		LastName:     m.LastName,
+		AvatarKey:    m.AvatarKey,
 		Role:         m.Role,
 		ManagerID:    m.ManagerID,
 		CreatedAt:    m.CreatedAt,
@@ -26,10 +27,10 @@ func ToUserModel(m *domain.User) *model.UserModel {
 		PasswordHash: m.PasswordHash,
 		FirstName:    m.FirstName,
 		LastName:     m.LastName,
+		AvatarKey:    m.AvatarKey,
 		Role:         m.Role,
 		ManagerID:    m.ManagerID,
 		CreatedAt:    m.CreatedAt,
 		UpdatedAt:    m.UpdatedAt,
 	}
 }
-
