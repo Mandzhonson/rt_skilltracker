@@ -14,15 +14,14 @@ import (
 var ErrInvalidRefreshToken = errors.New("invalid refresh token")
 
 func (s *authService) Refresh(ctx context.Context, refreshToken string) (string, string, error) {
-
 	claims, err := s.jwt.ParseRefreshToken(refreshToken)
 	if err != nil {
-		return "", "", err
+		return "", "", ErrInvalidRefreshToken
 	}
 
 	userID, err := uuid.Parse(claims.Subject)
 	if err != nil {
-		return "", "", err
+		return "", "", ErrInvalidRefreshToken
 	}
 
 	hash := hashRefreshToken(refreshToken)
@@ -39,21 +38,24 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (string,
 			}
 			return "", "", err
 		}
-
+		if token.Revoked {
+			return "", "", ErrInvalidRefreshToken
+		}
+		if time.Now().After(token.ExpiresAt) {
+			return "", "", ErrInvalidRefreshToken
+		}
 		if token.TokenHash != hash {
 			return "", "", ErrInvalidRefreshToken
 		}
-
 		if err := s.redis.SaveSession(
 			ctx,
 			token.JTI,
 			token.UserID,
 			token.TokenHash,
-			s.jwt.RefreshTTL(),
+			time.Until(token.ExpiresAt),
 		); err != nil {
 			return "", "", err
 		}
-
 		session = &redis.Session{
 			UserID:    token.UserID,
 			TokenHash: token.TokenHash,
@@ -61,45 +63,36 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (string,
 	}
 
 	if session.TokenHash != hash {
-		return "", "", ErrInvalidCredentials
+		return "", "", ErrInvalidRefreshToken
 	}
-
 	user, err := s.userRepo.GetById(ctx, userID)
 	if err != nil {
 		return "", "", err
 	}
-
 	newAccess, err := s.jwt.GenerateAccessToken(user.ID, user.Role)
 	if err != nil {
 		return "", "", err
 	}
-
 	newRefresh, newJTI, err := s.jwt.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return "", "", err
 	}
-
 	newHash := hashRefreshToken(newRefresh)
-
 	if err := s.authRepo.DeleteRefreshToken(ctx, claims.ID); err != nil {
 		return "", "", err
 	}
-
 	if err := s.redis.DeleteSession(ctx, claims.ID); err != nil {
 		return "", "", err
 	}
-
 	entity := domain.RefreshToken{
 		UserID:    user.ID,
 		JTI:       newJTI,
 		TokenHash: newHash,
 		ExpiresAt: time.Now().Add(s.jwt.RefreshTTL()),
 	}
-
 	if err := s.authRepo.SaveRefreshToken(ctx, entity); err != nil {
 		return "", "", err
 	}
-
 	if err := s.redis.SaveSession(
 		ctx,
 		newJTI,
@@ -109,6 +102,5 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (string,
 	); err != nil {
 		return "", "", err
 	}
-
 	return newAccess, newRefresh, nil
 }

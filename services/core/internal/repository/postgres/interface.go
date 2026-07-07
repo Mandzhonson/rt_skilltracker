@@ -20,4 +20,5 @@ type UserRepository interface {
 	UpdateProfile(ctx context.Context, userID uuid.UUID, update *domain.UpdateUserProfile) error
 	UpdatePassword(ctx context.Context, userID uuid.UUID, hashPassword string) error
 	UpdateAvatar(ctx context.Context, userID uuid.UUID, avatarKey *string) error
+	ExistsAdmin(ctx context.Context) (bool, error)
 }

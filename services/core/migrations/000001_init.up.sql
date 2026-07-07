@@ -9,7 +9,7 @@ CREATE TABLE users (
     last_name VARCHAR(100) NOT NULL,
 
     avatar_key TEXT,
-    
+
     role VARCHAR(50) NOT NULL DEFAULT 'employee'
         CHECK (role IN ('employee', 'manager', 'admin')),
 
@@ -45,58 +45,74 @@ CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
 
 
 
-CREATE TABLE skills (
+CREATE TABLE plan_drafts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-    name VARCHAR(255) NOT NULL UNIQUE,
-
-    description TEXT,
-
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-
-
-CREATE TABLE user_skills (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-
-    skill_id UUID NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
-
-    confirmed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    UNIQUE(user_id, skill_id)
-);
-
-CREATE INDEX idx_user_skills_user ON user_skills(user_id);
-CREATE INDEX idx_user_skills_skill ON user_skills(skill_id);
-
-
-
-CREATE TABLE plans (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    employee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
     created_by UUID NOT NULL REFERENCES users(id),
-
-    skill_id UUID NOT NULL REFERENCES skills(id),
 
     title VARCHAR(255) NOT NULL,
 
     description TEXT,
 
-    status VARCHAR(50) NOT NULL DEFAULT 'active'
-        CHECK (status IN ('active', 'completed', 'archived')),
+    status VARCHAR(30) NOT NULL DEFAULT 'draft'
+        CHECK(status IN ('draft','confirmed','cancelled')),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_plans_user_id ON plans(user_id);
-CREATE INDEX idx_plans_skill_id ON plans(skill_id);
+CREATE INDEX idx_plan_drafts_employee ON plan_drafts(employee_id);
+CREATE INDEX idx_plan_drafts_creator ON plan_drafts(created_by);
+
+
+
+CREATE TABLE draft_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    draft_id UUID NOT NULL REFERENCES plan_drafts(id) ON DELETE CASCADE,
+
+    author_type VARCHAR(20) NOT NULL
+        CHECK(author_type IN ('manager','ai')),
+
+    message TEXT NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_draft_messages_draft ON draft_messages(draft_id);
+
+
+
+CREATE TABLE plans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    employee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+    created_by UUID NOT NULL REFERENCES users(id),
+
+    title VARCHAR(255) NOT NULL,
+
+    description TEXT,
+
+    creation_type VARCHAR(20) NOT NULL
+        CHECK(creation_type IN ('manual','ai')),
+
+    progress SMALLINT NOT NULL DEFAULT 0
+        CHECK(progress BETWEEN 0 AND 100),
+
+    status VARCHAR(30) NOT NULL DEFAULT 'active'
+        CHECK(status IN ('active','completed','archived')),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_plans_employee ON plans(employee_id);
+CREATE INDEX idx_plans_creator ON plans(created_by);
 CREATE INDEX idx_plans_status ON plans(status);
 
 
@@ -110,17 +126,17 @@ CREATE TABLE tasks (
 
     description TEXT,
 
-    position SMALLINT NOT NULL DEFAULT 0,
+    position SMALLINT NOT NULL,
 
-    status VARCHAR(50) NOT NULL DEFAULT 'todo'
-        CHECK (status IN ('todo', 'in_progress', 'done')),
+    status VARCHAR(30) NOT NULL DEFAULT 'todo'
+        CHECK(status IN ('todo','in_progress','done')),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_tasks_plan_id ON tasks(plan_id);
+CREATE INDEX idx_tasks_plan ON tasks(plan_id);
 CREATE INDEX idx_tasks_status ON tasks(status);
 
 
@@ -141,44 +157,37 @@ CREATE INDEX idx_task_comments_task ON task_comments(task_id);
 
 
 
+CREATE TABLE tests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    plan_id UUID NOT NULL UNIQUE REFERENCES plans(id) ON DELETE CASCADE,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+
+
 CREATE TABLE questions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-    skill_id UUID NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+    plan_id UUID NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
 
     question_text TEXT NOT NULL,
 
     option_a VARCHAR(500) NOT NULL,
-
     option_b VARCHAR(500) NOT NULL,
-
     option_c VARCHAR(500) NOT NULL,
-
     option_d VARCHAR(500) NOT NULL,
 
     correct_option CHAR(1) NOT NULL
-        CHECK (correct_option IN ('A', 'B', 'C', 'D')),
+        CHECK(correct_option IN ('A','B','C','D')),
 
     ai_generated BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_questions_skill ON questions(skill_id);
-
-
-
-CREATE TABLE tests (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-
-    plan_id UUID NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
-
-    skill_id UUID NOT NULL REFERENCES skills(id),
-
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX idx_tests_plan_id ON tests(plan_id);
+CREATE INDEX idx_questions_plan ON questions(plan_id);
 
 
 
@@ -189,12 +198,12 @@ CREATE TABLE test_questions (
 
     question_id UUID NOT NULL REFERENCES questions(id),
 
-    position SMALLINT NOT NULL DEFAULT 0,
+    position SMALLINT NOT NULL,
 
     UNIQUE(test_id, question_id)
 );
 
-CREATE INDEX idx_test_questions_test_id ON test_questions(test_id);
+CREATE INDEX idx_test_questions_test ON test_questions(test_id);
 
 
 
@@ -218,8 +227,8 @@ CREATE TABLE test_attempts (
     finished_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_test_attempts_test_id ON test_attempts(test_id);
-CREATE INDEX idx_test_attempts_user_id ON test_attempts(user_id);
+CREATE INDEX idx_test_attempts_test ON test_attempts(test_id);
+CREATE INDEX idx_test_attempts_user ON test_attempts(user_id);
 
 
 
@@ -231,9 +240,27 @@ CREATE TABLE test_answers (
     question_id UUID NOT NULL REFERENCES questions(id),
 
     selected_option CHAR(1) NOT NULL
-        CHECK (selected_option IN ('A', 'B', 'C', 'D')),
+        CHECK(selected_option IN ('A','B','C','D')),
 
     is_correct BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE INDEX idx_test_answers_attempt_id ON test_answers(attempt_id);
+CREATE INDEX idx_test_answers_attempt ON test_answers(attempt_id);
+
+
+
+CREATE TABLE user_skills (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+    plan_id UUID NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+
+    name VARCHAR(255) NOT NULL,
+
+    confirmed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    UNIQUE(user_id, name)
+);
+
+CREATE INDEX idx_user_skills_user ON user_skills(user_id);

@@ -1,6 +1,7 @@
 package user
 
 import (
+	"core_service/internal/domain"
 	"io"
 
 	"github.com/google/uuid"
@@ -18,4 +19,12 @@ type SetAvatarInput struct {
 	File        io.Reader
 	Size        int64
 	ContentType string
+}
+
+type CreateUserInput struct {
+	Email     string
+	Password  string
+	FirstName string
+	LastName  string
+	Role      domain.Role
 }

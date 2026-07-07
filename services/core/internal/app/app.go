@@ -6,6 +6,7 @@ import (
 	"core_service/internal/clients/postgres"
 	"core_service/internal/clients/redis"
 	"core_service/internal/config"
+	"core_service/internal/domain"
 	"core_service/internal/pkg/jwt"
 	minioStorage "core_service/internal/repository/minio"
 	postgresRepository "core_service/internal/repository/postgres"
@@ -67,6 +68,20 @@ func Run() error {
 	authMiddleware := middleware.AuthMiddleware(jwtService, sessionRepository)
 	router := router.NewRouter(authHandler, userHandler, authMiddleware)
 
+	err = userService.CreateAdmin(
+		ctx,
+		user.CreateUserInput{
+			Email:     cfg.Admin.Email,
+			Password:  cfg.Admin.Password,
+			FirstName: cfg.Admin.FirstName,
+			LastName:  cfg.Admin.LastName,
+			Role:      domain.RoleAdmin,
+		},
+	)
+
+	if err != nil {
+		return err
+	}
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%s", cfg.HTTP.Host, cfg.HTTP.Port),
 		Handler:      router,

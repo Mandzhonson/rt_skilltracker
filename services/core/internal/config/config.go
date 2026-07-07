@@ -15,6 +15,7 @@ type Config struct {
 	Redis    RedisConfig
 	Minio    MinioConfig
 	JWT      JWTConfig
+	Admin    AdminConfig
 }
 
 type HTTPConfig struct {
@@ -52,6 +53,13 @@ type JWTConfig struct {
 	RefreshSecret string        `env:"JWT_REFRESH_SECRET" env-required:"true"`
 	AccessTTL     time.Duration `env:"JWT_ACCESS_TTL" env-default:"15m"`
 	RefreshTTL    time.Duration `env:"JWT_REFRESH_TTL" env-default:"168h"`
+}
+
+type AdminConfig struct {
+	Email     string `env:"ADMIN_EMAIL" env-required:"true"`
+	FirstName string `env:"ADMIN_FIRST_NAME" env-required:"true"`
+	LastName  string `env:"ADMIN_LAST_NAME" env-required:"true"`
+	Password  string `env:"ADMIN_PASSWORD" env-required:"true"`
 }
 
 func Load() (*Config, error) {

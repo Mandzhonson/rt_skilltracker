@@ -6,11 +6,23 @@ import (
 	"core_service/internal/repository/postgres"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 )
 
-func (s *userService) CreateUser(ctx context.Context, u *domain.User) (uuid.UUID, error) {
+func (s *userService) CreateUser(ctx context.Context, input CreateUserInput) (uuid.UUID, error) {
+	u := domain.NewEmployee(
+		input.Email,
+		input.Password,
+		input.FirstName,
+		input.LastName,
+	)
+	role := input.Role
+
+	if role == "" {
+		role = domain.RoleEmployee
+	}
 	if err := validateUser(u); err != nil {
 		return uuid.Nil, err
 	}
@@ -30,6 +42,7 @@ func (s *userService) CreateUser(ctx context.Context, u *domain.User) (uuid.UUID
 	}
 
 	u.PasswordHash = hashedPassword
+	u.Role = role
 
 	id, err := s.userRepo.Create(ctx, u)
 	if err != nil {
@@ -43,13 +56,14 @@ func validateUser(u *domain.User) error {
 	if u == nil {
 		return errors.New("user cannot be nil")
 	}
+
 	if !isValidEmail(u.Email) {
 		return ErrInvalidEmail
 	}
 	if len(u.PasswordHash) < 8 {
 		return ErrInvalidPassword
 	}
-	if u.FirstName == "" || u.LastName == "" {
+	if strings.TrimSpace(u.FirstName) == "" || strings.TrimSpace(u.LastName) == "" {
 		return ErrInvalidName
 	}
 	return nil

@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"core_service/internal/config"
+	"core_service/internal/domain"
 	"errors"
 	"time"
 
@@ -32,10 +33,10 @@ func NewJWTService(cfg config.JWTConfig) *JWTService {
 
 type Claims struct {
 	jwt.RegisteredClaims
-	Role string `json:"role,omitempty"`
+	Role domain.Role `json:"role,omitempty"`
 }
 
-func (c *JWTService) GenerateAccessToken(userID uuid.UUID, role string) (string, error) {
+func (c *JWTService) GenerateAccessToken(userID uuid.UUID, role domain.Role) (string, error) {
 	jti := uuid.NewString()
 
 	claims := Claims{

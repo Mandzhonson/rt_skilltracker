@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -28,8 +27,8 @@ func NewUserRepository(pool *pgxpool.Pool) *userRepository {
 func (r *userRepository) Create(ctx context.Context, u *domain.User) (uuid.UUID, error) {
 	var id uuid.UUID
 	m := converter.ToUserModel(u)
-	query := `INSERT INTO users(email, password_hash, first_name, last_name, manager_id) VALUES($1,$2,$3,$4,$5) RETURNING id`
-	err := r.pool.QueryRow(ctx, query, m.Email, m.PasswordHash, m.FirstName, m.LastName, m.ManagerID).Scan(&id)
+	query := `INSERT INTO users(email, password_hash, first_name, last_name, role, manager_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING id`
+	err := r.pool.QueryRow(ctx, query, m.Email, m.PasswordHash, m.FirstName, m.LastName, m.Role, m.ManagerID).Scan(&id)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("repository.Create (user): %w", err)
 	}
@@ -76,7 +75,7 @@ func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*domain.Use
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
-		return nil, fmt.Errorf("repository.GetByEmail(user): %w", err)
+		return nil, fmt.Errorf("repository.GetByID(user): %w", err)
 	}
 	return converter.ToUserEntity(&m), nil
 }
@@ -104,9 +103,7 @@ func (r *userRepository) UpdateProfile(ctx context.Context, userID uuid.UUID, up
 		i++
 	}
 
-	setClauses = append(setClauses, fmt.Sprintf("updated_at=$%d", i))
-	args = append(args, time.Now())
-	i++
+	setClauses = append(setClauses, "updated_at=NOW()")
 
 	args = append(args, userID)
 
@@ -150,4 +147,23 @@ func (r *userRepository) UpdateAvatar(ctx context.Context, userID uuid.UUID, ava
 	}
 
 	return nil
+}
+
+func (r *userRepository) ExistsAdmin(ctx context.Context) (bool, error) {
+	var exists bool
+
+	query := `
+	SELECT EXISTS(
+		SELECT 1
+		FROM users
+		WHERE role = 'admin'
+	)
+	`
+
+	err := r.pool.QueryRow(ctx, query).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("repository.ExistsAdmin(user): %w", err)
+	}
+
+	return exists, nil
 }

@@ -15,13 +15,14 @@ import (
 )
 
 type UserService interface {
-	CreateUser(ctx context.Context, u *domain.User) (uuid.UUID, error)
+	CreateUser(ctx context.Context, input user.CreateUserInput) (uuid.UUID, error)
 	GetProfile(ctx context.Context, userID uuid.UUID) (*domain.User, error)
 	UpdateProfile(ctx context.Context, upd user.UpdateProfileInput) error
 	UpdatePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error
 	SetAvatar(ctx context.Context, input user.SetAvatarInput) error
 	GetAvatar(ctx context.Context, userID uuid.UUID) (io.ReadCloser, string, error)
 	DeleteAvatar(ctx context.Context, userID uuid.UUID) error
+	CreateAdmin(ctx context.Context, input user.CreateUserInput) error
 }
 
 type UserHandler struct {
@@ -44,14 +45,14 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	entity := &domain.User{
-		Email:        req.Email,
-		PasswordHash: req.Password,
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
+	input := user.CreateUserInput{
+		Email:     req.Email,
+		Password:  req.Password,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
 	}
 
-	id, err := h.service.CreateUser(c.Request.Context(), entity)
+	id, err := h.service.CreateUser(c.Request.Context(), input)
 	if err != nil {
 
 		switch {
