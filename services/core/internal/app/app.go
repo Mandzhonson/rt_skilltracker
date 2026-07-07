@@ -15,6 +15,7 @@ import (
 	router "core_service/internal/transport/http"
 	"core_service/internal/transport/http/handler"
 	"core_service/internal/transport/http/middleware"
+	"core_service/internal/usecase/admin"
 	"core_service/internal/usecase/auth"
 	"core_service/internal/usecase/user"
 	"fmt"
@@ -62,11 +63,15 @@ func Run() error {
 	jwtService := jwt.NewJWTService(cfg.JWT)
 	authService := auth.NewAuthService(authRepository, userRepository, jwtService, sessionRepository)
 	userService := user.NewUserService(userRepository, minioStorage)
+	adminService := admin.NewAdminService(userRepository)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
+	adminHandler := handler.NewAdminHandler(adminService)
+
 	authMiddleware := middleware.AuthMiddleware(jwtService, sessionRepository)
-	router := router.NewRouter(authHandler, userHandler, authMiddleware)
+	adminMiddleware := middleware.AdminMiddleware()
+	router := router.NewRouter(authHandler, userHandler, adminHandler, authMiddleware, adminMiddleware)
 
 	err = userService.CreateAdmin(
 		ctx,

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"core_service/internal/domain"
+	"core_service/internal/repository/model"
 
 	"github.com/google/uuid"
 )
@@ -21,4 +22,10 @@ type UserRepository interface {
 	UpdatePassword(ctx context.Context, userID uuid.UUID, hashPassword string) error
 	UpdateAvatar(ctx context.Context, userID uuid.UUID, avatarKey *string) error
 	ExistsAdmin(ctx context.Context) (bool, error)
+	CountAdmins(ctx context.Context) (int, error)
+	ListUsers(ctx context.Context, params model.ListUsersParams) ([]*domain.User, error)
+	UpdateRole(ctx context.Context, userID uuid.UUID, role domain.Role) error
+	AssignManager(ctx context.Context, userID uuid.UUID, managerID uuid.UUID) error
+	RemoveManager(ctx context.Context, userID uuid.UUID) error
+	ListEmployeesByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.User, error)
 }

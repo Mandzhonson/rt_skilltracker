@@ -9,7 +9,9 @@ import (
 func NewRouter(
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
-	authMiddleware gin.HandlerFunc) *gin.Engine {
+	adminHandler *handler.AdminHandler,
+	authMiddleware gin.HandlerFunc,
+	adminMiddleware gin.HandlerFunc) *gin.Engine {
 	router := gin.New()
 
 	router.Use(gin.Logger())
@@ -38,6 +40,17 @@ func NewRouter(
 			user.PUT("/me/avatar", userHandler.SetAvatar)
 			user.GET("/me/avatar", userHandler.GetAvatar)
 			user.DELETE("/me/avatar", userHandler.DeleteAvatar)
+		}
+		admin := api.Group("/admin")
+		{
+			admin.Use(authMiddleware, adminMiddleware)
+			admin.GET("/users", adminHandler.ListUsers)
+			admin.GET("/users/:id", adminHandler.GetUser)
+			admin.PATCH("/users/:id/role", adminHandler.UpdateRole)
+			admin.PATCH("/users/:id/manager", adminHandler.AssignManager)
+			admin.DELETE("/users/:id/manager", adminHandler.RemoveManager)
+			admin.GET("/managers/:id/employees", adminHandler.ListEmployeesByManager)
+
 		}
 	}
 
