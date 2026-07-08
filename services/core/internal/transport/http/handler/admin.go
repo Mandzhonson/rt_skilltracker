@@ -43,9 +43,16 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 
 	if value := c.Query("role"); value != "" {
 		r := domain.Role(value)
+
+		if !r.IsValid() {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "invalid role",
+			})
+			return
+		}
+
 		role = &r
 	}
-
 	var search *string
 
 	if value := c.Query("search"); value != "" {

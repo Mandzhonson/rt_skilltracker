@@ -51,6 +51,17 @@ func (u *User) SetRole(role Role) {
 	u.Role = role
 }
 
+func (r Role) IsValid() bool {
+	switch r {
+	case RoleEmployee,
+		RoleManager,
+		RoleAdmin:
+		return true
+	default:
+		return false
+	}
+}
+
 func NewEmployee(email, passwordHash, firstName, lastName string) *User {
 	return &User{
 		Email:        email,

@@ -32,7 +32,7 @@ func (r *userRepository) ListUsers(ctx context.Context, params model.ListUsersPa
 	if len(conditions) != 0 {
 		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
-	query += fmt.Sprintf(`ORDER BY created_at DESC LIMIT $%d OFFSET $%d`, argPos, argPos+1)
+	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT $%d OFFSET $%d`, argPos, argPos+1)
 	args = append(args, params.Limit, params.Offset)
 	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
