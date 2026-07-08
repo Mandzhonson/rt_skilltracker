@@ -29,3 +29,15 @@ type UserRepository interface {
 	RemoveManager(ctx context.Context, userID uuid.UUID) error
 	ListEmployeesByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.User, error)
 }
+
+type PlanRepository interface {
+	Create(ctx context.Context, plan *domain.Plan) (uuid.UUID, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Plan, error)
+	CreateTask(ctx context.Context, task *domain.Task) (uuid.UUID, error)
+}
+
+type TaskRepository interface {
+	Create(ctx context.Context, task *domain.Task) (uuid.UUID, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Task, error) 
+	GetNextPosition(ctx context.Context, planID uuid.UUID) (int, error)
+}

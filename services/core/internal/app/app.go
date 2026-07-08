@@ -17,6 +17,8 @@ import (
 	"core_service/internal/transport/http/middleware"
 	"core_service/internal/usecase/admin"
 	"core_service/internal/usecase/auth"
+	"core_service/internal/usecase/plan"
+	"core_service/internal/usecase/task"
 	"core_service/internal/usecase/user"
 	"fmt"
 	"net/http"
@@ -59,19 +61,27 @@ func Run() error {
 	sessionRepository := redisRepository.NewRedisSessionRepository(rdb)
 	userRepository := postgresRepository.NewUserRepository(pool)
 	authRepository := postgresRepository.NewAuthRepository(pool)
+	planRepository := postgresRepository.NewPlanRepository(pool)
+	taskRepository := postgresRepository.NewTaskRepository(pool)
 
 	jwtService := jwt.NewJWTService(cfg.JWT)
 	authService := auth.NewAuthService(authRepository, userRepository, jwtService, sessionRepository)
 	userService := user.NewUserService(userRepository, minioStorage)
 	adminService := admin.NewAdminService(userRepository)
+	planService := plan.NewPlanService(planRepository, userRepository)
+	taskService := task.NewTaskService(taskRepository, planRepository)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
 	adminHandler := handler.NewAdminHandler(adminService)
+	planHandler := handler.NewPlanHandler(planService)
+	taskHandler := handler.NewTaskHandler(taskService)
 
 	authMiddleware := middleware.AuthMiddleware(jwtService, sessionRepository)
 	adminMiddleware := middleware.AdminMiddleware()
-	router := router.NewRouter(authHandler, userHandler, adminHandler, authMiddleware, adminMiddleware)
+	managerMiddleware := middleware.ManagerMiddleware()
+
+	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, authMiddleware, adminMiddleware, managerMiddleware)
 
 	err = userService.CreateAdmin(
 		ctx,

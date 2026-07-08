@@ -10,8 +10,11 @@ func NewRouter(
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
 	adminHandler *handler.AdminHandler,
+	planHandler *handler.PlanHandler,
+	taskHandler *handler.TaskHandler,
 	authMiddleware gin.HandlerFunc,
-	adminMiddleware gin.HandlerFunc) *gin.Engine {
+	adminMiddleware gin.HandlerFunc,
+	managerMiddleware gin.HandlerFunc) *gin.Engine {
 	router := gin.New()
 
 	router.Use(gin.Logger())
@@ -30,20 +33,20 @@ func NewRouter(
 				protected.POST("/logout", authHandler.Logout)
 			}
 		}
-		user := api.Group("/users")
+		authorized := api.Group("")
+		authorized.Use(authMiddleware)
+		user := authorized.Group("/users")
 		{
-			user.Use(authMiddleware)
 			user.GET("/me", userHandler.GetProfile)
 			user.PATCH("/me", userHandler.UpdateProfile)
 			user.PATCH("/me/password", userHandler.UpdatePassword)
-
 			user.PUT("/me/avatar", userHandler.SetAvatar)
 			user.GET("/me/avatar", userHandler.GetAvatar)
 			user.DELETE("/me/avatar", userHandler.DeleteAvatar)
 		}
-		admin := api.Group("/admin")
+		admin := authorized.Group("/admin")
 		{
-			admin.Use(authMiddleware, adminMiddleware)
+			admin.Use(adminMiddleware)
 			admin.GET("/users", adminHandler.ListUsers)
 			admin.GET("/users/:id", adminHandler.GetUser)
 			admin.PATCH("/users/:id/role", adminHandler.UpdateRole)
@@ -52,6 +55,23 @@ func NewRouter(
 			admin.GET("/managers/:id/employees", adminHandler.ListEmployeesByManager)
 
 		}
+		manager := authorized.Group("/manager")
+		{
+			manager.Use(managerMiddleware)
+
+			plans := manager.Group("/plans")
+			{
+				plans.POST("", planHandler.Create)
+				plans.GET("/:plan_id", planHandler.GetByID)
+				plans.POST("/:plan_id/tasks", taskHandler.Create)
+			}
+
+			tasks := manager.Group("/tasks")
+			{
+				tasks.GET("/:task_id", taskHandler.GetByID)
+			}
+		}
+
 	}
 
 	return router
