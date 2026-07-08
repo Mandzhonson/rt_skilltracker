@@ -78,13 +78,6 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	}
 
 	for _, user := range users {
-		var managerID *string
-
-		if user.ManagerID != nil {
-			id := user.ManagerID.String()
-			managerID = &id
-		}
-
 		response.Users = append(
 			response.Users,
 			dto.UserResponse{
@@ -93,7 +86,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 				FirstName: user.FirstName,
 				LastName:  user.LastName,
 				Role:      string(user.Role),
-				ManagerID: managerID,
+				ManagerID: uuidPtrToString(user.ManagerID),
 			},
 		)
 	}
@@ -120,13 +113,6 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	var managerID *string
-
-	if userRes.ManagerID != nil {
-		value := userRes.ManagerID.String()
-		managerID = &value
-	}
-
 	c.JSON(
 		http.StatusOK,
 		dto.UserDetailsResponse{
@@ -135,7 +121,7 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 			FirstName: userRes.FirstName,
 			LastName:  userRes.LastName,
 			Role:      string(userRes.Role),
-			ManagerID: managerID,
+			ManagerID: uuidPtrToString(userRes.ManagerID),
 			CreatedAt: userRes.CreatedAt,
 			UpdatedAt: userRes.UpdatedAt,
 		},
