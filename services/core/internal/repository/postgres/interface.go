@@ -38,6 +38,8 @@ type PlanRepository interface {
 
 type TaskRepository interface {
 	Create(ctx context.Context, task *domain.Task) (uuid.UUID, error)
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.Task, error) 
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Task, error)
 	GetNextPosition(ctx context.Context, planID uuid.UUID) (int, error)
+	Update(ctx context.Context, id uuid.UUID, title *string, description *string) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }

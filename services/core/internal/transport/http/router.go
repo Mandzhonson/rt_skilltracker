@@ -69,6 +69,8 @@ func NewRouter(
 			tasks := manager.Group("/tasks")
 			{
 				tasks.GET("/:task_id", taskHandler.GetByID)
+				tasks.DELETE("/:task_id", taskHandler.Delete)
+				tasks.PATCH("/:task_id", taskHandler.Update)
 			}
 		}
 

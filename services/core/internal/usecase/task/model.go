@@ -8,3 +8,10 @@ type CreateTaskInput struct {
 	Title       string
 	Description *string
 }
+
+type UpdateTaskInput struct {
+	TaskID      uuid.UUID
+	ManagerID   uuid.UUID
+	Title       *string
+	Description *string
+}

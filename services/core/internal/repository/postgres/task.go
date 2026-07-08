@@ -114,3 +114,47 @@ func (r *taskRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Tas
 
 	return converter.ToTaskEntity(&m), nil
 }
+
+func (r *taskRepository) Update(ctx context.Context, id uuid.UUID, title *string, description *string) error {
+
+	query := `
+	UPDATE tasks
+	SET
+		title = COALESCE($1,title),
+		description = $2,
+		updated_at = NOW()
+	WHERE id=$3
+	`
+
+	result, err := r.pool.Exec(ctx, query, title, description, id)
+	if err != nil {
+		return fmt.Errorf("repository.Update(task): %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrTaskNotFound
+	}
+
+	return nil
+}
+
+func (r *taskRepository) Delete(ctx context.Context, id uuid.UUID) error {
+
+	query := `
+		DELETE FROM tasks
+		WHERE id = $1
+	`
+
+	result, err := r.pool.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf(
+			"repository.Delete(task): %w",
+			err,
+		)
+	}
+	if result.RowsAffected() == 0 {
+		return ErrTaskNotFound
+	}
+
+	return nil
+}

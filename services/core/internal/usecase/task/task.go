@@ -11,6 +11,7 @@ var (
 	ErrInvalidTitle  = errors.New("invalid title")
 	ErrPlanNotFound  = errors.New("plan not found")
 	ErrForbidden     = errors.New("forbidden")
+	ErrInvalidUpdate = errors.New("nothing to update")
 )
 
 type taskService struct {
