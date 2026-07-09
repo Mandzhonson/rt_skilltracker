@@ -17,6 +17,7 @@ type TaskService interface {
 	Create(ctx context.Context, input task.CreateTaskInput) (uuid.UUID, error)
 	GetByID(ctx context.Context, managerID uuid.UUID, id uuid.UUID) (*domain.Task, error)
 	Update(ctx context.Context, input task.UpdateTaskInput) error
+	UpdateStatus(ctx context.Context, input task.UpdateTaskStatusInput) error
 	Delete(ctx context.Context, managerID uuid.UUID, taskID uuid.UUID) error
 }
 
@@ -68,7 +69,7 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		case errors.Is(err, task.ErrPlanNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 
-		case errors.Is(err, task.ErrForbidden):
+		case errors.Is(err, task.ErrManagerForbidden):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 
 		default:
@@ -142,7 +143,7 @@ func (h *TaskHandler) Delete(c *gin.Context) {
 		switch {
 		case errors.Is(err, task.ErrTaskNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		case errors.Is(err, task.ErrForbidden):
+		case errors.Is(err, task.ErrManagerForbidden):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -186,7 +187,58 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case errors.Is(err, task.ErrTaskNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		case errors.Is(err, task.ErrForbidden):
+		case errors.Is(err, task.ErrManagerForbidden):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+	c.Status(http.StatusOK)
+}
+
+func (h *TaskHandler) UpdateStatus(c *gin.Context) {
+
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "unauthorized",
+		})
+		return
+	}
+
+	taskID, err := uuid.Parse(c.Param("task_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid task id"})
+		return
+	}
+
+	var req dto.UpdateTaskStatusRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	err = h.service.UpdateStatus(
+		c.Request.Context(),
+		task.UpdateTaskStatusInput{
+			TaskID: taskID,
+			UserID: userID,
+			Status: domain.TaskStatus(req.Status),
+		},
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, task.ErrInvalidTaskID),
+			errors.Is(err, task.ErrInvalidUserID),
+			errors.Is(err, task.ErrInvalidStatus):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, task.ErrTaskNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, task.ErrEmployeeForbidden):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})

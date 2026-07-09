@@ -24,3 +24,8 @@ type PlanResponse struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
+
+type PlanWithTasksResponse struct {
+	Plan  PlanResponse   `json:"plan"`
+	Tasks []TaskResponse `json:"tasks"`
+}

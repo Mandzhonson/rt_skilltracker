@@ -33,7 +33,7 @@ func (s *taskService) Update(ctx context.Context, input UpdateTaskInput) error {
 	}
 
 	if planEntity.CreatedBy != input.ManagerID {
-		return ErrForbidden
+		return ErrManagerForbidden
 	}
 
 	if input.Title != nil {

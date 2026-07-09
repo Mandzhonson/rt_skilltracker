@@ -14,7 +14,8 @@ func NewRouter(
 	taskHandler *handler.TaskHandler,
 	authMiddleware gin.HandlerFunc,
 	adminMiddleware gin.HandlerFunc,
-	managerMiddleware gin.HandlerFunc) *gin.Engine {
+	managerMiddleware gin.HandlerFunc,
+	employeeMiddleware gin.HandlerFunc) *gin.Engine {
 	router := gin.New()
 
 	router.Use(gin.Logger())
@@ -73,7 +74,19 @@ func NewRouter(
 				tasks.PATCH("/:task_id", taskHandler.Update)
 			}
 		}
-
+		employee := authorized.Group("/employee")
+		{
+			employee.Use(employeeMiddleware)
+			plans := employee.Group("/plans")
+			{
+				plans.GET("", planHandler.EmployeeGetPlans)
+				plans.GET("/:plan_id", planHandler.EmployeeGetPlan)
+			}
+			tasks := employee.Group("/tasks")
+			{
+				tasks.PATCH("/:task_id/status", taskHandler.UpdateStatus)
+			}
+		}
 	}
 
 	return router

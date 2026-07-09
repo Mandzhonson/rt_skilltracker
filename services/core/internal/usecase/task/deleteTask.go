@@ -30,7 +30,7 @@ func (s *taskService) Delete(ctx context.Context, managerID uuid.UUID, taskID uu
 	}
 
 	if planEntity.CreatedBy != managerID {
-		return ErrForbidden
+		return ErrManagerForbidden
 	}
 
 	err = s.taskRepo.Delete(ctx, taskID)

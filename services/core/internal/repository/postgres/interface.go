@@ -33,7 +33,9 @@ type UserRepository interface {
 type PlanRepository interface {
 	Create(ctx context.Context, plan *domain.Plan) (uuid.UUID, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Plan, error)
-	CreateTask(ctx context.Context, task *domain.Task) (uuid.UUID, error)
+	ListByEmployeeID(ctx context.Context, employeeID uuid.UUID) ([]*domain.Plan, error)
+	GetEmployeePlan(ctx context.Context, employeeID uuid.UUID, planID uuid.UUID) (*domain.Plan, error)
+	RecalculateProgress(ctx context.Context, planID uuid.UUID) error
 }
 
 type TaskRepository interface {
@@ -42,4 +44,6 @@ type TaskRepository interface {
 	GetNextPosition(ctx context.Context, planID uuid.UUID) (int, error)
 	Update(ctx context.Context, id uuid.UUID, title *string, description *string) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
+	ListByPlanID(ctx context.Context, planID uuid.UUID) ([]*domain.Task, error)
 }

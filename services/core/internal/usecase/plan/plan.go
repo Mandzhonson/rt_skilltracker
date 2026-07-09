@@ -12,17 +12,20 @@ var (
 	ErrEmployeeNotAssigned = errors.New("employee is not assigned to manager")
 	ErrPlanNotFound        = errors.New("plan not found")
 	ErrInvalidPlanID       = errors.New("invalid plan id")
+	ErrEmployeeForbidden   = errors.New("employee has no access")
 	ErrForbidden           = errors.New("forbidden")
 )
 
 type planService struct {
 	planRepo postgres.PlanRepository
 	userRepo postgres.UserRepository
+	taskRepo postgres.TaskRepository
 }
 
-func NewPlanService(planRepo postgres.PlanRepository, userRepo postgres.UserRepository) *planService {
+func NewPlanService(planRepo postgres.PlanRepository, userRepo postgres.UserRepository, taskRepo postgres.TaskRepository) *planService {
 	return &planService{
 		planRepo: planRepo,
 		userRepo: userRepo,
+		taskRepo: taskRepo,
 	}
 }

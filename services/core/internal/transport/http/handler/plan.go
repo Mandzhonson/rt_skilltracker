@@ -17,6 +17,8 @@ import (
 type PlanService interface {
 	Create(ctx context.Context, input plan.CreatePlanInput) (uuid.UUID, error)
 	GetByID(ctx context.Context, managerID uuid.UUID, id uuid.UUID) (*domain.Plan, error)
+	GetEmployeePlan(ctx context.Context, employeeID, planID uuid.UUID) (*domain.PlanWithTasks, error)
+	ListEmployeePlans(ctx context.Context, employeeID uuid.UUID) ([]*domain.PlanWithTasks, error)
 }
 
 type PlanHandler struct {
@@ -82,7 +84,7 @@ func (h *PlanHandler) Create(c *gin.Context) {
 }
 
 func (h *PlanHandler) GetByID(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
+	id, err := uuid.Parse(c.Param("plan_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid plan id"})
 		return
@@ -115,5 +117,110 @@ func (h *PlanHandler) GetByID(c *gin.Context) {
 		Status:       string(entity.Status),
 		CreatedAt:    entity.CreatedAt,
 		UpdatedAt:    entity.UpdatedAt,
+	})
+}
+
+func (h *PlanHandler) EmployeeGetPlans(c *gin.Context) {
+	employeeID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	plans, err := h.service.ListEmployeePlans(c.Request.Context(), employeeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+	response := make([]dto.PlanWithTasksResponse, 0, len(plans))
+	for _, p := range plans {
+		tasks := make([]dto.TaskResponse, 0, len(p.Tasks))
+		for _, t := range p.Tasks {
+			tasks = append(tasks, dto.TaskResponse{
+				ID:          t.ID.String(),
+				PlanID:      t.PlanID.String(),
+				Title:       t.Title,
+				Description: t.Description,
+				Position:    t.Position,
+				Status:      string(t.Status),
+				CreatedAt:   t.CreatedAt,
+				UpdatedAt:   t.UpdatedAt,
+			})
+		}
+		response = append(response, dto.PlanWithTasksResponse{
+			Plan: dto.PlanResponse{
+				ID:           p.Plan.ID.String(),
+				EmployeeID:   p.Plan.EmployeeID.String(),
+				CreatedBy:    p.Plan.CreatedBy.String(),
+				Title:        p.Plan.Title,
+				Description:  p.Plan.Description,
+				CreationType: string(p.Plan.CreationType),
+				Progress:     p.Plan.Progress,
+				Status:       string(p.Plan.Status),
+				CreatedAt:    p.Plan.CreatedAt,
+				UpdatedAt:    p.Plan.UpdatedAt,
+			},
+			Tasks: tasks,
+		})
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+func (h *PlanHandler) EmployeeGetPlan(c *gin.Context) {
+	employeeID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	planID, err := uuid.Parse(c.Param("plan_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid plan id"})
+		return
+	}
+
+	planEntity, err := h.service.GetEmployeePlan(c.Request.Context(), employeeID, planID)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, plan.ErrPlanNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, plan.ErrInvalidPlanID):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, plan.ErrEmployeeForbidden):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+	tasks := make([]dto.TaskResponse, 0, len(planEntity.Tasks))
+	for _, t := range planEntity.Tasks {
+		tasks = append(tasks, dto.TaskResponse{
+			ID:          t.ID.String(),
+			PlanID:      t.PlanID.String(),
+			Title:       t.Title,
+			Description: t.Description,
+			Position:    t.Position,
+			Status:      string(t.Status),
+			CreatedAt:   t.CreatedAt,
+			UpdatedAt:   t.UpdatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, dto.PlanWithTasksResponse{
+		Plan: dto.PlanResponse{
+			ID:           planEntity.Plan.ID.String(),
+			EmployeeID:   planEntity.Plan.EmployeeID.String(),
+			CreatedBy:    planEntity.Plan.CreatedBy.String(),
+			Title:        planEntity.Plan.Title,
+			Description:  planEntity.Plan.Description,
+			CreationType: string(planEntity.Plan.CreationType),
+			Progress:     planEntity.Plan.Progress,
+			Status:       string(planEntity.Plan.Status),
+			CreatedAt:    planEntity.Plan.CreatedAt,
+			UpdatedAt:    planEntity.Plan.UpdatedAt,
+		},
+		Tasks: tasks,
 	})
 }

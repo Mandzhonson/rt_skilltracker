@@ -158,3 +158,76 @@ func (r *taskRepository) Delete(ctx context.Context, id uuid.UUID) error {
 
 	return nil
 }
+
+func (r *taskRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
+
+	query := `
+	UPDATE tasks
+	SET
+		status=$1,
+		updated_at=NOW()
+	WHERE id=$2
+	`
+
+	result, err := r.pool.Exec(ctx, query, status, id)
+	if err != nil {
+		return fmt.Errorf("repository.UpdateStatus(task): %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrTaskNotFound
+	}
+
+	return nil
+}
+
+func (r *taskRepository) ListByPlanID(ctx context.Context, planID uuid.UUID) ([]*domain.Task, error) {
+
+	query := `
+        SELECT
+            id,
+            plan_id,
+            title,
+            description,
+            position,
+            status,
+            created_at,
+            updated_at
+        FROM tasks
+        WHERE plan_id = $1
+        ORDER BY position
+    `
+
+	rows, err := r.pool.Query(ctx, query, planID)
+	if err != nil {
+		return nil, fmt.Errorf("repository.ListByPlanID(task): %w", err)
+	}
+	defer rows.Close()
+
+	tasks := make([]*domain.Task, 0)
+
+	for rows.Next() {
+		var m model.TaskModel
+		err := rows.Scan(
+			&m.ID,
+			&m.PlanID,
+			&m.Title,
+			&m.Description,
+			&m.Position,
+			&m.Status,
+			&m.CreatedAt,
+			&m.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		tasks = append(tasks, converter.ToTaskEntity(&m))
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}

@@ -39,7 +39,7 @@ func (s *taskService) GetByID(ctx context.Context, managerID uuid.UUID, id uuid.
 	}
 
 	if planEntity.CreatedBy != managerID {
-		return nil, ErrForbidden
+		return nil, ErrManagerForbidden
 	}
 
 	return entity, nil

@@ -68,7 +68,7 @@ func Run() error {
 	authService := auth.NewAuthService(authRepository, userRepository, jwtService, sessionRepository)
 	userService := user.NewUserService(userRepository, minioStorage)
 	adminService := admin.NewAdminService(userRepository)
-	planService := plan.NewPlanService(planRepository, userRepository)
+	planService := plan.NewPlanService(planRepository, userRepository, taskRepository)
 	taskService := task.NewTaskService(taskRepository, planRepository)
 
 	authHandler := handler.NewAuthHandler(authService)
@@ -80,8 +80,9 @@ func Run() error {
 	authMiddleware := middleware.AuthMiddleware(jwtService, sessionRepository)
 	adminMiddleware := middleware.AdminMiddleware()
 	managerMiddleware := middleware.ManagerMiddleware()
+	employeeMiddleware := middleware.EmployeeMiddleware()
 
-	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, authMiddleware, adminMiddleware, managerMiddleware)
+	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, authMiddleware, adminMiddleware, managerMiddleware, employeeMiddleware)
 
 	err = userService.CreateAdmin(
 		ctx,

@@ -32,7 +32,7 @@ func (s *taskService) Create(ctx context.Context, input CreateTaskInput) (uuid.U
 	}
 
 	if planEntity.CreatedBy != input.CreatedBy {
-		return uuid.Nil, ErrForbidden
+		return uuid.Nil, ErrManagerForbidden
 	}
 
 	position, err := s.taskRepo.GetNextPosition(

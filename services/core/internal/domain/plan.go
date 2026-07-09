@@ -45,3 +45,8 @@ func NewPlan(employeeID uuid.UUID, createdBy uuid.UUID, title string, descriptio
 		Status:       PlanActive,
 	}
 }
+
+type PlanWithTasks struct {
+	Plan  *Plan
+	Tasks []*Task
+}
