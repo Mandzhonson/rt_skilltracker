@@ -50,6 +50,7 @@ func NewRouter(
 			admin.Use(adminMiddleware)
 			admin.GET("/users", adminHandler.ListUsers)
 			admin.GET("/users/:id", adminHandler.GetUser)
+			admin.GET("/users/:id/avatar", adminHandler.GetUserAvatar)
 			admin.PATCH("/users/:id/role", adminHandler.UpdateRole)
 			admin.PATCH("/users/:id/manager", adminHandler.AssignManager)
 			admin.DELETE("/users/:id/manager", adminHandler.RemoveManager)

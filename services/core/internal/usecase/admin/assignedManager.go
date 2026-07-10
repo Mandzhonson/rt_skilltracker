@@ -9,6 +9,7 @@ import (
 var (
 	ErrInvalidManager = errors.New("user is not manager")
 	ErrAssignYourself = errors.New("cannot assign yourself")
+	ErrManagerCycle   = errors.New("manager hierarchy contains cycle")
 )
 
 func (s *adminService) AssignManager(ctx context.Context, input AssignManagerInput) error {
@@ -34,6 +35,9 @@ func (s *adminService) AssignManager(ctx context.Context, input AssignManagerInp
 	if manager.Role != domain.RoleManager {
 		return ErrInvalidManager
 	}
-
+	err = s.validateManagerHierarchy(ctx, input.UserID, input.ManagerID)
+	if err != nil {
+		return err
+	}
 	return s.userRepo.AssignManager(ctx, input.UserID, input.ManagerID)
 }

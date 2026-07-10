@@ -23,7 +23,6 @@ export const Navbar = () => {
     <nav style={{ backgroundColor: 'white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '64px' }}>
-          {/* Логотип */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
             <Link to="/profile" style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#2563eb' }}>
               SkillTracker
@@ -34,8 +33,8 @@ export const Navbar = () => {
                   Профиль
                 </Link>
                 {user.role === 'admin' && (
-                  <Link to="/admin" style={{ color: '#374151' }}>
-                    Админ панель
+                  <Link to="/admin/users" style={{ color: '#374151' }}>
+                    Пользователи
                   </Link>
                 )}
                 {user.role === 'manager' && (
@@ -52,7 +51,6 @@ export const Navbar = () => {
             )}
           </div>
 
-          {/* Пользователь */}
           {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
               <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>

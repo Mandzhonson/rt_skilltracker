@@ -67,7 +67,7 @@ func Run() error {
 	jwtService := jwt.NewJWTService(cfg.JWT)
 	authService := auth.NewAuthService(authRepository, userRepository, jwtService, sessionRepository)
 	userService := user.NewUserService(userRepository, minioStorage)
-	adminService := admin.NewAdminService(userRepository)
+	adminService := admin.NewAdminService(userRepository, minioStorage)
 	planService := plan.NewPlanService(planRepository, userRepository, taskRepository)
 	taskService := task.NewTaskService(taskRepository, planRepository)
 

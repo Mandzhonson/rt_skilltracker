@@ -181,3 +181,14 @@ func (r *userRepository) ExistsAdmin(ctx context.Context) (bool, error) {
 
 	return exists, nil
 }
+
+func (r *userRepository) ClearManagerAssignments(ctx context.Context, managerID uuid.UUID) error {
+	query := `
+		UPDATE users
+		SET manager_id = NULL
+		WHERE manager_id = $1
+	`
+
+	_, err := r.pool.Exec(ctx, query, managerID)
+	return err
+}

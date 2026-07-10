@@ -8,6 +8,7 @@ import (
 	"core_service/internal/usecase/admin"
 	"core_service/internal/usecase/user"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -22,6 +23,7 @@ type AdminService interface {
 	AssignManager(ctx context.Context, input admin.AssignManagerInput) error
 	RemoveManager(ctx context.Context, userID uuid.UUID) error
 	ListEmployeesByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.User, error)
+	GetUserAvatar(ctx context.Context, userID uuid.UUID) (io.ReadCloser, string, error)
 }
 
 type AdminHandler struct {
@@ -203,7 +205,8 @@ func (h *AdminHandler) AssignManager(c *gin.Context) {
 		switch {
 
 		case errors.Is(err, admin.ErrAssignYourself),
-			errors.Is(err, admin.ErrInvalidManager):
+			errors.Is(err, admin.ErrInvalidManager),
+			errors.Is(err, admin.ErrManagerCycle):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case errors.Is(err, user.ErrUserNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -277,4 +280,32 @@ func (h *AdminHandler) ListEmployeesByManager(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+func (h *AdminHandler) GetUserAvatar(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+
+	reader, contentType, err := h.service.GetUserAvatar(c.Request.Context(), id)
+	if err != nil {
+		switch {
+		case errors.Is(err, user.ErrAvatarNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "avatar not found"})
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+	defer reader.Close()
+
+	c.Header("Content-Type", contentType)
+	_, err = io.Copy(c.Writer, reader)
+	if err != nil {
+		return
+	}
 }
