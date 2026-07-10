@@ -43,6 +43,7 @@ services:
     container_name: skilltracker-minio
     ports:
       - "${MINIO_API_PORT}:9000"
+      - "9001:9001"  # MinIO Console
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
@@ -58,6 +59,7 @@ services:
       retries: 3
     networks:
       - skilltracker-network
+
   core:
     build: 
       context: ./services/core
@@ -77,6 +79,19 @@ services:
         condition: service_healthy      
     networks:
       - skilltracker-network
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: skilltracker-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - core
+    networks:
+      - skilltracker-network
+    restart: unless-stopped
+
 networks:
   skilltracker-network:
     driver: bridge

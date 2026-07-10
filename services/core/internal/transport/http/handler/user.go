@@ -17,7 +17,7 @@ import (
 type UserService interface {
 	CreateUser(ctx context.Context, input user.CreateUserInput) (uuid.UUID, error)
 	GetProfile(ctx context.Context, userID uuid.UUID) (*domain.User, error)
-	UpdateProfile(ctx context.Context, upd user.UpdateProfileInput) error
+	UpdateProfile(ctx context.Context, upd user.UpdateProfileInput) (*domain.User, error)
 	UpdatePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error
 	SetAvatar(ctx context.Context, input user.SetAvatarInput) error
 	GetAvatar(ctx context.Context, userID uuid.UUID) (io.ReadCloser, string, error)
@@ -144,7 +144,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	err := h.service.UpdateProfile(
+	entity, err := h.service.UpdateProfile(
 		c.Request.Context(),
 		user.UpdateProfileInput{
 			UserID:    userID,
@@ -154,33 +154,31 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		},
 	)
 	if err != nil {
+
 		switch {
+
 		case errors.Is(err, user.ErrInvalidEmail),
 			errors.Is(err, user.ErrInvalidName):
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, user.ErrUserAlreadyExists):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		case errors.Is(err, user.ErrUserNotFound):
-
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		case errors.Is(err, user.ErrNoContent):
 			c.Status(http.StatusNoContent)
-
 		default:
-
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		}
-
 		return
 	}
 
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, dto.ProfileResponse{
+		ID:        entity.ID.String(),
+		Email:     entity.Email,
+		FirstName: entity.FirstName,
+		LastName:  entity.LastName,
+		Role:      string(entity.Role),
+	})
 }
 
 func (h *UserHandler) UpdatePassword(c *gin.Context) {

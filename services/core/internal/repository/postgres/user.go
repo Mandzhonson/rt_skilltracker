@@ -11,7 +11,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+var (
+	ErrUserAlreadyExists = errors.New("user already exists")
 )
 
 type userRepository struct {
@@ -113,11 +118,20 @@ func (r *userRepository) UpdateProfile(ctx context.Context, userID uuid.UUID, up
 		i,
 	)
 
-	_, err := r.pool.Exec(ctx, query, args...)
+	cmd, err := r.pool.Exec(ctx, query, args...)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case "23505":
+				return ErrUserAlreadyExists
+			}
+		}
 		return fmt.Errorf("repository.UpdateProfile(user): %w", err)
 	}
-
+	if cmd.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
 	return nil
 }
 
