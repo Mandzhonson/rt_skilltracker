@@ -8,3 +8,10 @@ type CreatePlanInput struct {
 	Title       string
 	Description *string
 }
+
+type UpdatePlanInput struct {
+	PlanID      uuid.UUID
+	ManagerID   uuid.UUID
+	Title       string
+	Description *string
+}

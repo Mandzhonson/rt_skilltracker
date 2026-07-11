@@ -29,3 +29,8 @@ type PlanWithTasksResponse struct {
 	Plan  PlanResponse   `json:"plan"`
 	Tasks []TaskResponse `json:"tasks"`
 }
+
+type UpdatePlanRequest struct {
+	Title       string  `json:"title" binding:"required"`
+	Description *string `json:"description"`
+}

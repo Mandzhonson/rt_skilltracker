@@ -37,6 +37,10 @@ type PlanRepository interface {
 	ListByEmployeeID(ctx context.Context, employeeID uuid.UUID) ([]*domain.Plan, error)
 	GetEmployeePlan(ctx context.Context, employeeID uuid.UUID, planID uuid.UUID) (*domain.Plan, error)
 	RecalculateProgress(ctx context.Context, planID uuid.UUID) error
+	ListByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.Plan, error)
+	GetByIDWithTasks(ctx context.Context, id uuid.UUID) (*domain.PlanWithTasks, error)
+	Update(ctx context.Context, planID uuid.UUID, title string, description *string) error
+	Delete(ctx context.Context, planID uuid.UUID) error
 }
 
 type TaskRepository interface {

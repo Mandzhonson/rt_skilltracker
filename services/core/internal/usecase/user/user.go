@@ -20,6 +20,7 @@ var (
 	ErrInvalidAvatarFormat = errors.New("invalid avatar format")
 	ErrAvatarTooLarge      = errors.New("avatar is too large")
 	ErrAvatarNotFound      = errors.New("avatar is not found")
+	ErrNotManager          = errors.New("user is not a manager")
 )
 
 type userService struct {

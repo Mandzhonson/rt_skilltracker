@@ -14,6 +14,7 @@ var (
 	ErrInvalidPlanID       = errors.New("invalid plan id")
 	ErrEmployeeForbidden   = errors.New("employee has no access")
 	ErrForbidden           = errors.New("forbidden")
+	ErrManagerForbidden    = errors.New("manager has no access")
 )
 
 type planService struct {

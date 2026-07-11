@@ -8,6 +8,8 @@ import { Unauthorized } from './pages/Unauthorized.jsx';
 import { AdminUsers } from './pages/admin/AdminUsers.jsx';
 import { AdminUserDetail } from './pages/admin/AdminUserDetail.jsx';
 import { AdminManagerEmployees } from './pages/admin/AdminManagerEmployees.jsx';
+import { ManagerPlans } from './pages/manager/ManagerPlans.jsx';
+import { ManagerPlanDetail } from './pages/manager/ManagerPlanDetail.jsx';
 
 function App() {
   return (
@@ -48,9 +50,15 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/manager/*" element={
+          <Route path="/manager" element={
             <ProtectedRoute allowedRoles={['manager']}>
-              <div className="p-8">Панель менеджера (скоро)</div>
+              <ManagerPlans />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/manager/plans/:planId" element={
+            <ProtectedRoute allowedRoles={['manager']}>
+              <ManagerPlanDetail />
             </ProtectedRoute>
           } />
           

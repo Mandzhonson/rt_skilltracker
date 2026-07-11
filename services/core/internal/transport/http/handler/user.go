@@ -23,6 +23,7 @@ type UserService interface {
 	GetAvatar(ctx context.Context, userID uuid.UUID) (io.ReadCloser, string, error)
 	DeleteAvatar(ctx context.Context, userID uuid.UUID) error
 	CreateAdmin(ctx context.Context, input user.CreateUserInput) error
+	GetEmployeesByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.User, error)
 }
 
 type UserHandler struct {
@@ -325,4 +326,38 @@ func (h *UserHandler) GetAvatar(c *gin.Context) {
 	if err != nil {
 		return
 	}
+}
+
+func (h *UserHandler) GetEmployeesByManager(c *gin.Context) {
+	managerID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	employees, err := h.service.GetEmployeesByManager(c.Request.Context(), managerID)
+	if err != nil {
+		switch {
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, user.ErrNotManager):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+
+	response := make([]dto.UserResponse, 0, len(employees))
+	for _, u := range employees {
+		response = append(response, dto.UserResponse{
+			ID:        u.ID.String(),
+			Email:     u.Email,
+			FirstName: u.FirstName,
+			LastName:  u.LastName,
+			Role:      string(u.Role),
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
 }
