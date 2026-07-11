@@ -4,6 +4,7 @@ import (
 	"context"
 	"core_service/internal/repository/postgres"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -39,6 +40,10 @@ func (s *taskService) Delete(ctx context.Context, managerID uuid.UUID, taskID uu
 			return ErrTaskNotFound
 		}
 		return err
+	}
+	err = s.planRepo.RecalculateProgress(ctx, entity.PlanID)
+	if err != nil {
+		return fmt.Errorf("recalculate progress: %w", err)
 	}
 
 	return nil

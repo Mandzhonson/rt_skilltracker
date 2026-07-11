@@ -1,7 +1,6 @@
 package task
 
 import (
-	"core_service/internal/domain"
 	"core_service/internal/repository/postgres"
 	"errors"
 )
@@ -28,16 +27,4 @@ func NewTaskService(taskRepo postgres.TaskRepository, planRepo postgres.PlanRepo
 		taskRepo: taskRepo,
 		planRepo: planRepo,
 	}
-}
-
-func validateStatusChange(current domain.TaskStatus, next domain.TaskStatus) bool {
-	switch current {
-	case domain.TaskTodo:
-		return next == domain.TaskInProgress
-	case domain.TaskInProgress:
-		return next == domain.TaskDone
-	case domain.TaskDone:
-		return false
-	}
-	return false
 }

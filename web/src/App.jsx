@@ -10,6 +10,9 @@ import { AdminUserDetail } from './pages/admin/AdminUserDetail.jsx';
 import { AdminManagerEmployees } from './pages/admin/AdminManagerEmployees.jsx';
 import { ManagerPlans } from './pages/manager/ManagerPlans.jsx';
 import { ManagerPlanDetail } from './pages/manager/ManagerPlanDetail.jsx';
+import { EmployeePlans } from './pages/employee/EmployeePlans.jsx';
+import { EmployeePlanDetail } from './pages/employee/EmployeePlanDetail.jsx';
+import { EmployeeTasks } from './pages/employee/EmployeeTasks.jsx';
 
 function App() {
   return (
@@ -62,9 +65,21 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/employee/*" element={
+          <Route path="/employee" element={
             <ProtectedRoute allowedRoles={['employee']}>
-              <div className="p-8">Панель сотрудника (скоро)</div>
+              <EmployeePlans />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/employee/plans/:planId" element={
+            <ProtectedRoute allowedRoles={['employee']}>
+              <EmployeePlanDetail />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/employee/tasks" element={
+            <ProtectedRoute allowedRoles={['employee']}>
+              <EmployeeTasks />
             </ProtectedRoute>
           } />
           

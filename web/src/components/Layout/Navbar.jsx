@@ -43,9 +43,14 @@ export const Navbar = () => {
                   </Link>
                 )}
                 {user.role === 'employee' && (
-                  <Link to="/employee" style={{ color: '#374151' }}>
-                    Мои планы
-                  </Link>
+                  <>
+                    <Link to="/employee" style={{ color: '#374151' }}>
+                      Мои планы
+                    </Link>
+                    <Link to="/employee/tasks" style={{ color: '#374151' }}>
+                      Мои задачи
+                    </Link>
+                  </>
                 )}
               </div>
             )}

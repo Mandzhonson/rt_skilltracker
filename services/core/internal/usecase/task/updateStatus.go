@@ -39,10 +39,6 @@ func (s *taskService) UpdateStatus(ctx context.Context, input UpdateTaskStatusIn
 		return ErrInvalidStatus
 	}
 
-	if !validateStatusChange(taskEntity.Status, input.Status) {
-		return ErrInvalidStatus
-	}
-
 	planEntity, err := s.planRepo.GetByID(ctx, taskEntity.PlanID)
 	if err != nil {
 		if errors.Is(err, postgres.ErrPlanNotFound) {

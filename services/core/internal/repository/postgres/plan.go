@@ -105,33 +105,28 @@ func (r *planRepository) RecalculateProgress(ctx context.Context, planID uuid.UU
 	query := `
 	UPDATE plans
 	SET
-	progress = x.progress,
-	status =
-	CASE
-		WHEN x.progress=100
-		THEN 'completed'
-		ELSE status
-	END,
-	updated_at=NOW()
-
+		progress = x.progress,
+		status = CASE
+			WHEN x.done = x.total THEN 'completed'
+			ELSE 'active'
+		END,
+		updated_at = NOW()
 	FROM (
 		SELECT
-		$1::uuid id,
-		COALESCE(
-		ROUND(
-			COUNT(*) FILTER(
-				WHERE status='done'
-			)
-			*100.0/
-			NULLIF(COUNT(*),0)
-		),0
-		)::int progress
-
+			$1::uuid AS id,
+			COUNT(*) AS total,
+			COUNT(*) FILTER (WHERE status = 'done') AS done,
+			COALESCE(
+				ROUND(
+					COUNT(*) FILTER (WHERE status = 'done') * 100.0 /
+					NULLIF(COUNT(*), 0)
+				),
+				0
+			)::int AS progress
 		FROM tasks
-		WHERE plan_id=$1
-	)x
-
-	WHERE plans.id=x.id
+		WHERE plan_id = $1
+	) x
+	WHERE plans.id = x.id;
 	`
 
 	_, err := r.pool.Exec(ctx, query, planID)

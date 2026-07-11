@@ -52,12 +52,15 @@ func (s *taskService) Create(ctx context.Context, input CreateTaskInput) (uuid.U
 	)
 
 	id, err := s.taskRepo.Create(ctx, entity)
-
 	if err != nil {
 		return uuid.Nil, fmt.Errorf(
 			"create task: %w",
 			err,
 		)
+	}
+	err = s.planRepo.RecalculateProgress(ctx, input.PlanID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("recalculate progress: %w", err)
 	}
 
 	return id, nil
