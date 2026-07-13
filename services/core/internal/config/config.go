@@ -16,13 +16,14 @@ type Config struct {
 	Minio    MinioConfig
 	JWT      JWTConfig
 	Admin    AdminConfig
+	Ollama   OllamaConfig
 }
 
 type HTTPConfig struct {
 	Port            string        `env:"HTTP_PORT" env-default:"8080"`
 	Host            string        `env:"HTTP_HOST" env-default:"0.0.0.0"`
 	ReadTimeout     time.Duration `env:"HTTP_READ_TIMEOUT" env-default:"5s"`
-	WriteTimeout    time.Duration `env:"HTTP_WRITE_TIMEOUT" env-default:"10s"`
+	WriteTimeout    time.Duration `env:"HTTP_WRITE_TIMEOUT" env-default:"120s"`
 	ShutdownTimeout time.Duration `env:"HTTP_SHUTDOWN_TIMEOUT" env-default:"10s"`
 }
 
@@ -60,6 +61,12 @@ type AdminConfig struct {
 	FirstName string `env:"ADMIN_FIRST_NAME" env-required:"true"`
 	LastName  string `env:"ADMIN_LAST_NAME" env-required:"true"`
 	Password  string `env:"ADMIN_PASSWORD" env-required:"true"`
+}
+
+type OllamaConfig struct {
+	BaseUrl string        `env:"OLLAMA_URL" env-required:"true"`
+	Model   string        `env:"OLLAMA_MODEL" env-required:"true"`
+	Timeout time.Duration `env:"OLLAMA_TIMEOUT" env-default:"120s"`
 }
 
 func Load() (*Config, error) {

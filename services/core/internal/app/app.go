@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"core_service/internal/clients/minio"
+	"core_service/internal/clients/ollama"
 	"core_service/internal/clients/postgres"
 	"core_service/internal/clients/redis"
 	"core_service/internal/config"
@@ -16,6 +17,7 @@ import (
 	"core_service/internal/transport/http/handler"
 	"core_service/internal/transport/http/middleware"
 	"core_service/internal/usecase/admin"
+	"core_service/internal/usecase/ai"
 	"core_service/internal/usecase/auth"
 	"core_service/internal/usecase/plan"
 	"core_service/internal/usecase/task"
@@ -57,6 +59,8 @@ func Run() error {
 		return err
 	}
 
+	ollama := ollama.InitOllama(cfg.Ollama)
+
 	minioStorage := minioStorage.NewMinioStorage(minio, cfg.Minio.Bucket)
 	sessionRepository := redisRepository.NewRedisSessionRepository(rdb)
 	userRepository := postgresRepository.NewUserRepository(pool)
@@ -70,19 +74,21 @@ func Run() error {
 	adminService := admin.NewAdminService(userRepository, minioStorage)
 	planService := plan.NewPlanService(planRepository, userRepository, taskRepository)
 	taskService := task.NewTaskService(taskRepository, planRepository)
+	aiService := ai.NewAIService(ollama)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
 	adminHandler := handler.NewAdminHandler(adminService)
 	planHandler := handler.NewPlanHandler(planService)
 	taskHandler := handler.NewTaskHandler(taskService)
+	aiHandler := handler.NewAIHandler(aiService)
 
 	authMiddleware := middleware.AuthMiddleware(jwtService, sessionRepository)
 	adminMiddleware := middleware.AdminMiddleware()
 	managerMiddleware := middleware.ManagerMiddleware()
 	employeeMiddleware := middleware.EmployeeMiddleware()
 
-	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, authMiddleware, adminMiddleware, managerMiddleware, employeeMiddleware)
+	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, aiHandler, authMiddleware, adminMiddleware, managerMiddleware, employeeMiddleware)
 
 	err = userService.CreateAdmin(
 		ctx,

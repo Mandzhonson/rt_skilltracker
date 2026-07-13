@@ -12,6 +12,7 @@ func NewRouter(
 	adminHandler *handler.AdminHandler,
 	planHandler *handler.PlanHandler,
 	taskHandler *handler.TaskHandler,
+	aiHandler *handler.AIHandler,
 	authMiddleware gin.HandlerFunc,
 	adminMiddleware gin.HandlerFunc,
 	managerMiddleware gin.HandlerFunc,
@@ -61,6 +62,10 @@ func NewRouter(
 		{
 			manager.Use(managerMiddleware)
 			manager.GET("/employees", userHandler.GetEmployeesByManager)
+			ai := manager.Group("/ai")
+			{
+				ai.POST("/generate-plan", aiHandler.GeneratePlan)
+			}
 			plans := manager.Group("/plans")
 			{
 				plans.GET("", planHandler.ListByManager)

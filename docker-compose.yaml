@@ -67,6 +67,8 @@ services:
     container_name: skilltracker-core
     ports:
       - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - ".env"
     restart: unless-stopped
