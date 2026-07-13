@@ -34,3 +34,13 @@ type UpdatePlanRequest struct {
 	Title       string  `json:"title" binding:"required"`
 	Description *string `json:"description"`
 }
+
+type CreateAIPlanRequest struct {
+	EmployeeID  string `json:"employee_id" binding:"required"`
+	Topic       string `json:"topic" binding:"required"`
+	Description string `json:"description"`
+}
+
+type CreateAIPlanResponse struct {
+	ID string `json:"id"`
+}

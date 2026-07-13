@@ -19,6 +19,8 @@ export const ManagerPlans = () => {
     title: '',
     description: '',
   });
+  const [creating, setCreating] = useState(false);
+  const [createType, setCreateType] = useState(null);
 
   useEffect(() => {
     loadPlans();
@@ -65,11 +67,12 @@ export const ManagerPlans = () => {
       loadEmployees();
     }
     setError('');
+    setCreateType(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setCreating(true);
     setError('');
     setMessage('');
 
@@ -87,7 +90,31 @@ export const ManagerPlans = () => {
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка создания плана');
     } finally {
-      setLoading(false);
+      setCreating(false);
+    }
+  };
+
+  const handleCreateAI = async (e) => {
+    e.preventDefault();
+    setCreating(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await managerAPI.createAIPlan({
+        employee_id: formData.employee_id,
+        topic: formData.title,
+        description: formData.description || '',
+      });
+      setMessage('План успешно создан с помощью ИИ');
+      setFormData({ employee_id: '', title: '', description: '' });
+      setShowCreateForm(false);
+      loadPlans();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка создания плана с помощью ИИ');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -103,12 +130,12 @@ export const ManagerPlans = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      draft: 'bg-gray-100 text-gray-700',
+      draft: 'bg-gray-100 text-gray-600',
       active: 'bg-blue-100 text-blue-700',
       completed: 'bg-green-100 text-green-700',
       archived: 'bg-yellow-100 text-yellow-700',
     };
-    return colors[status] || 'bg-gray-100 text-gray-700';
+    return colors[status] || 'bg-gray-100 text-gray-600';
   };
 
   const getEmployeeName = (employeeId) => {
@@ -120,17 +147,16 @@ export const ManagerPlans = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Не указана';
+    if (!dateString) return '';
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Не указана';
+      if (isNaN(date.getTime())) return '';
       return date.toLocaleDateString('ru-RU', {
-        year: 'numeric',
-        month: 'long',
         day: 'numeric',
+        month: 'short',
       });
     } catch {
-      return 'Не указана';
+      return '';
     }
   };
 
@@ -159,7 +185,7 @@ export const ManagerPlans = () => {
         {showCreateForm && (
           <div className="card mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Создание нового плана</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form className="space-y-4">
               <div>
                 <label className="label">Сотрудник</label>
                 <select
@@ -206,13 +232,22 @@ export const ManagerPlans = () => {
                 />
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3 pt-2">
                 <button
-                  type="submit"
-                  disabled={loading}
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={creating || !formData.employee_id || !formData.title}
                   className="btn btn-primary disabled:opacity-50"
                 >
-                  {loading ? 'Создание...' : 'Создать'}
+                  {creating ? 'Создание...' : 'Создать'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateAI}
+                  disabled={creating || !formData.employee_id || !formData.title}
+                  className="btn btn-success disabled:opacity-50"
+                >
+                  {creating ? 'Создание...' : 'Создать с помощью ИИ'}
                 </button>
                 <button
                   type="button"
@@ -220,6 +255,7 @@ export const ManagerPlans = () => {
                     setShowCreateForm(false);
                     setFormData({ employee_id: '', title: '', description: '' });
                     setError('');
+                    setCreateType(null);
                   }}
                   className="btn btn-secondary"
                 >
@@ -230,9 +266,8 @@ export const ManagerPlans = () => {
           </div>
         )}
 
-        {/* Фильтр по сотруднику */}
-        <div className="flex items-center gap-4 mb-4">
-          <label className="text-sm font-medium text-gray-700">Фильтр по сотруднику:</label>
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-sm text-gray-500">Фильтр:</span>
           <select
             value={selectedEmployeeId}
             onChange={(e) => setSelectedEmployeeId(e.target.value)}

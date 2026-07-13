@@ -15,3 +15,11 @@ type UpdatePlanInput struct {
 	Title       string
 	Description *string
 }
+
+type CreateAIInput struct {
+	EmployeeID  uuid.UUID
+	Topic       string
+	Description string
+	TargetRole  string
+	CreatedBy   uuid.UUID
+}

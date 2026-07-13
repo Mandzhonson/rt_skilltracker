@@ -3,9 +3,7 @@ package ai
 type GeneratePlanInput struct {
 	Topic          string
 	Description    string
-	EmployeeLevel  string
 	ExistingSkills []string
-	TargetRole     string
 }
 
 type GeneratedTask struct {

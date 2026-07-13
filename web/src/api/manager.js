@@ -4,6 +4,7 @@ export const managerAPI = {
   getEmployees: () => apiClient.get('/manager/employees'),
   listPlans: (params) => apiClient.get('/manager/plans', { params }),
   createPlan: (data) => apiClient.post('/manager/plans', data),
+  createAIPlan: (data) => apiClient.post('/manager/plans/ai', data),
   getPlan: (planId) => apiClient.get(`/manager/plans/${planId}`),
   updatePlan: (planId, data) => apiClient.patch(`/manager/plans/${planId}`, data),
   deletePlan: (planId) => apiClient.delete(`/manager/plans/${planId}`),

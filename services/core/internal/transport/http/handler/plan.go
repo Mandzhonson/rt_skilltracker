@@ -16,6 +16,7 @@ import (
 
 type PlanService interface {
 	Create(ctx context.Context, input plan.CreatePlanInput) (uuid.UUID, error)
+	CreateAI(ctx context.Context, input plan.CreateAIInput) (uuid.UUID, error)
 	GetByID(ctx context.Context, managerID uuid.UUID, id uuid.UUID) (*domain.Plan, error)
 	ListByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.Plan, error)
 	GetEmployeePlan(ctx context.Context, employeeID, planID uuid.UUID) (*domain.PlanWithTasks, error)
@@ -351,4 +352,43 @@ func (h *PlanHandler) Delete(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func (h *PlanHandler) CreateAI(c *gin.Context) {
+	managerID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	var req dto.CreateAIPlanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	employeeID, err := uuid.Parse(req.EmployeeID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee id"})
+		return
+	}
+
+	id, err := h.service.CreateAI(c.Request.Context(), plan.CreateAIInput{
+		EmployeeID:  employeeID,
+		CreatedBy:   managerID,
+		Topic:       req.Topic,
+		Description: req.Description,
+	},
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, plan.ErrInvalidEmployee):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, plan.ErrInvalidCreator),
+			errors.Is(err, plan.ErrEmployeeNotAssigned):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+	c.JSON(http.StatusCreated, dto.CreateAIPlanResponse{ID: id.String()})
 }

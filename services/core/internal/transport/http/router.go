@@ -62,14 +62,11 @@ func NewRouter(
 		{
 			manager.Use(managerMiddleware)
 			manager.GET("/employees", userHandler.GetEmployeesByManager)
-			ai := manager.Group("/ai")
-			{
-				ai.POST("/generate-plan", aiHandler.GeneratePlan)
-			}
 			plans := manager.Group("/plans")
 			{
 				plans.GET("", planHandler.ListByManager)
 				plans.POST("", planHandler.Create)
+				plans.POST("/ai", planHandler.CreateAI)
 				plans.GET("/:plan_id", planHandler.GetByID)
 				plans.DELETE("/:plan_id", planHandler.Delete)
 				plans.PATCH("/:plan_id", planHandler.Update)

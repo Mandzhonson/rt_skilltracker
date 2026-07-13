@@ -33,6 +33,7 @@ type UserRepository interface {
 
 type PlanRepository interface {
 	Create(ctx context.Context, plan *domain.Plan) (uuid.UUID, error)
+	CreateWithTasks(ctx context.Context, plan *domain.Plan, tasks []*domain.Task) (uuid.UUID, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Plan, error)
 	ListByEmployeeID(ctx context.Context, employeeID uuid.UUID) ([]*domain.Plan, error)
 	GetEmployeePlan(ctx context.Context, employeeID uuid.UUID, planID uuid.UUID) (*domain.Plan, error)
@@ -51,4 +52,8 @@ type TaskRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
 	ListByPlanID(ctx context.Context, planID uuid.UUID) ([]*domain.Task, error)
+}
+
+type SkillRepository interface {
+	ListByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.UserSkill, error)
 }

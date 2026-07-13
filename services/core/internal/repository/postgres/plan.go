@@ -390,3 +390,97 @@ func (r *planRepository) Delete(ctx context.Context, planID uuid.UUID) error {
 
 	return nil
 }
+
+func (r *planRepository) createPlan(ctx context.Context, tx pgx.Tx, entity *domain.Plan) (uuid.UUID, error) {
+	query := `
+	INSERT INTO plans (
+		employee_id,
+		created_by,
+		title,
+		description,
+		creation_type,
+		progress,
+		status
+	)
+	VALUES ($1,$2,$3,$4,$5,$6,$7)
+	RETURNING id
+	`
+
+	var id uuid.UUID
+
+	err := tx.QueryRow(
+		ctx,
+		query,
+		entity.EmployeeID,
+		entity.CreatedBy,
+		entity.Title,
+		entity.Description,
+		entity.CreationType,
+		entity.Progress,
+		entity.Status,
+	).Scan(&id)
+
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return id, nil
+}
+
+func (r *planRepository) createTask(ctx context.Context, tx pgx.Tx, task *domain.Task) error {
+
+	query := `
+	INSERT INTO tasks (
+		plan_id,
+		title,
+		description,
+		position,
+		status
+	)
+	VALUES ($1,$2,$3,$4,$5)
+	`
+
+	_, err := tx.Exec(
+		ctx,
+		query,
+		task.PlanID,
+		task.Title,
+		task.Description,
+		task.Position,
+		task.Status,
+	)
+
+	return err
+}
+
+func (r *planRepository) CreateWithTasks(ctx context.Context, plan *domain.Plan, tasks []*domain.Task) (uuid.UUID, error) {
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	planID, err := r.createPlan(ctx, tx, plan)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	for _, task := range tasks {
+
+		task.PlanID = planID
+
+		if err := r.createTask(ctx, tx, task); err != nil {
+			return uuid.Nil, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return uuid.Nil, err
+	}
+
+	return planID, nil
+}

@@ -67,14 +67,15 @@ func Run() error {
 	authRepository := postgresRepository.NewAuthRepository(pool)
 	planRepository := postgresRepository.NewPlanRepository(pool)
 	taskRepository := postgresRepository.NewTaskRepository(pool)
+	skillRepository := postgresRepository.NewSkillRepository(pool)
 
 	jwtService := jwt.NewJWTService(cfg.JWT)
+	aiService := ai.NewAIService(ollama)
 	authService := auth.NewAuthService(authRepository, userRepository, jwtService, sessionRepository)
 	userService := user.NewUserService(userRepository, minioStorage)
 	adminService := admin.NewAdminService(userRepository, minioStorage)
-	planService := plan.NewPlanService(planRepository, userRepository, taskRepository)
+	planService := plan.NewPlanService(planRepository, userRepository, taskRepository, skillRepository, *aiService)
 	taskService := task.NewTaskService(taskRepository, planRepository)
-	aiService := ai.NewAIService(ollama)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
