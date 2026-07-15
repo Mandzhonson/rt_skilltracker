@@ -58,18 +58,16 @@ func (s *planService) Create(ctx context.Context, input CreatePlanInput) (uuid.U
 		domain.CreationManual,
 	)
 
-	id, err := s.planRepo.Create(ctx, entity)
+	entity.GenerationStatus = domain.GenerationPending
 
+	id, err := s.planRepo.Create(ctx, entity)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create plan: %w", err)
 	}
 
 	entity.ID = id
 
-	err = s.attachTesting(ctx, entity)
-	if err != nil {
-		return uuid.Nil, err
-	}
+	go s.generateManualPlan(context.Background(), entity)
 
 	return id, nil
 }

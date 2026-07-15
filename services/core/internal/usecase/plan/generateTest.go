@@ -8,15 +8,16 @@ import (
 )
 
 func (s *planService) generateTestForPlan(ctx context.Context, plan *domain.Plan, tasks []*domain.Task) error {
-	generatedTasks := make([]ai.GeneratedTask, 0, len(tasks))
+	generatedTasks := make([]ai.GeneratedTask, 0)
 
 	for _, task := range tasks {
-
+		if task.Title == "Пройти тестирование" {
+			continue
+		}
 		generatedTasks = append(generatedTasks, ai.GeneratedTask{
 			Title:       task.Title,
 			Description: deref(task.Description),
-		},
-		)
+		})
 	}
 	employee, err := s.userRepo.GetById(ctx, plan.EmployeeID)
 	if err != nil {
@@ -54,17 +55,15 @@ func (s *planService) generateTestForPlan(ctx context.Context, plan *domain.Plan
 			continue
 		}
 
-		questions = append(
-			questions,
-			domain.NewQuestion(
-				plan.ID,
-				q.Question,
-				q.OptionA,
-				q.OptionB,
-				q.OptionC,
-				q.OptionD,
-				correct,
-			),
+		questions = append(questions, domain.NewQuestion(
+			plan.ID,
+			q.Question,
+			q.OptionA,
+			q.OptionB,
+			q.OptionC,
+			q.OptionD,
+			correct,
+		),
 		)
 	}
 

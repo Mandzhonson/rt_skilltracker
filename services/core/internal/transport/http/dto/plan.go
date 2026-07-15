@@ -13,16 +13,17 @@ type CreatePlanResponse struct {
 }
 
 type PlanResponse struct {
-	ID           string    `json:"id"`
-	EmployeeID   string    `json:"employee_id"`
-	CreatedBy    string    `json:"created_by"`
-	Title        string    `json:"title"`
-	Description  *string   `json:"description"`
-	CreationType string    `json:"creation_type"`
-	Progress     int       `json:"progress"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID               string    `json:"id"`
+	EmployeeID       string    `json:"employee_id"`
+	CreatedBy        string    `json:"created_by"`
+	Title            string    `json:"title"`
+	Description      *string   `json:"description"`
+	GenerationStatus string    `json:"generation_status"`
+	CreationType     string    `json:"creation_type"`
+	Progress         int       `json:"progress"`
+	Status           string    `json:"status"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 type PlanWithTasksResponse struct {
@@ -43,4 +44,8 @@ type CreateAIPlanRequest struct {
 
 type CreateAIPlanResponse struct {
 	ID string `json:"id"`
+}
+
+type ListPlansResponse struct {
+	Plans []PlanResponse `json:"plans"`
 }

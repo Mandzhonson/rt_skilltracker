@@ -131,16 +131,17 @@ func (h *PlanHandler) GetByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.PlanWithTasksResponse{
 		Plan: dto.PlanResponse{
-			ID:           entity.Plan.ID.String(),
-			EmployeeID:   entity.Plan.EmployeeID.String(),
-			CreatedBy:    entity.Plan.CreatedBy.String(),
-			Title:        entity.Plan.Title,
-			Description:  entity.Plan.Description,
-			CreationType: string(entity.Plan.CreationType),
-			Progress:     entity.Plan.Progress,
-			Status:       string(entity.Plan.Status),
-			CreatedAt:    entity.Plan.CreatedAt,
-			UpdatedAt:    entity.Plan.UpdatedAt,
+			ID:               entity.Plan.ID.String(),
+			EmployeeID:       entity.Plan.EmployeeID.String(),
+			CreatedBy:        entity.Plan.CreatedBy.String(),
+			Title:            entity.Plan.Title,
+			Description:      entity.Plan.Description,
+			GenerationStatus: string(entity.Plan.GenerationStatus),
+			CreationType:     string(entity.Plan.CreationType),
+			Progress:         entity.Plan.Progress,
+			Status:           string(entity.Plan.Status),
+			CreatedAt:        entity.Plan.CreatedAt,
+			UpdatedAt:        entity.Plan.UpdatedAt,
 		},
 		Tasks: tasks,
 	})
@@ -175,16 +176,17 @@ func (h *PlanHandler) EmployeeGetPlans(c *gin.Context) {
 		}
 		response = append(response, dto.PlanWithTasksResponse{
 			Plan: dto.PlanResponse{
-				ID:           p.Plan.ID.String(),
-				EmployeeID:   p.Plan.EmployeeID.String(),
-				CreatedBy:    p.Plan.CreatedBy.String(),
-				Title:        p.Plan.Title,
-				Description:  p.Plan.Description,
-				CreationType: string(p.Plan.CreationType),
-				Progress:     p.Plan.Progress,
-				Status:       string(p.Plan.Status),
-				CreatedAt:    p.Plan.CreatedAt,
-				UpdatedAt:    p.Plan.UpdatedAt,
+				ID:               p.Plan.ID.String(),
+				EmployeeID:       p.Plan.EmployeeID.String(),
+				CreatedBy:        p.Plan.CreatedBy.String(),
+				Title:            p.Plan.Title,
+				Description:      p.Plan.Description,
+				GenerationStatus: string(p.Plan.GenerationStatus),
+				CreationType:     string(p.Plan.CreationType),
+				Progress:         p.Plan.Progress,
+				Status:           string(p.Plan.Status),
+				CreatedAt:        p.Plan.CreatedAt,
+				UpdatedAt:        p.Plan.UpdatedAt,
 			},
 			Tasks: tasks,
 		})
@@ -236,16 +238,17 @@ func (h *PlanHandler) EmployeeGetPlan(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.PlanWithTasksResponse{
 		Plan: dto.PlanResponse{
-			ID:           planEntity.Plan.ID.String(),
-			EmployeeID:   planEntity.Plan.EmployeeID.String(),
-			CreatedBy:    planEntity.Plan.CreatedBy.String(),
-			Title:        planEntity.Plan.Title,
-			Description:  planEntity.Plan.Description,
-			CreationType: string(planEntity.Plan.CreationType),
-			Progress:     planEntity.Plan.Progress,
-			Status:       string(planEntity.Plan.Status),
-			CreatedAt:    planEntity.Plan.CreatedAt,
-			UpdatedAt:    planEntity.Plan.UpdatedAt,
+			ID:               planEntity.Plan.ID.String(),
+			EmployeeID:       planEntity.Plan.EmployeeID.String(),
+			CreatedBy:        planEntity.Plan.CreatedBy.String(),
+			Title:            planEntity.Plan.Title,
+			Description:      planEntity.Plan.Description,
+			GenerationStatus: string(planEntity.Plan.GenerationStatus),
+			CreationType:     string(planEntity.Plan.CreationType),
+			Progress:         planEntity.Plan.Progress,
+			Status:           string(planEntity.Plan.Status),
+			CreatedAt:        planEntity.Plan.CreatedAt,
+			UpdatedAt:        planEntity.Plan.UpdatedAt,
 		},
 		Tasks: tasks,
 	})
@@ -267,20 +270,23 @@ func (h *PlanHandler) ListByManager(c *gin.Context) {
 	response := make([]dto.PlanResponse, 0, len(plans))
 	for _, p := range plans {
 		response = append(response, dto.PlanResponse{
-			ID:           p.ID.String(),
-			EmployeeID:   p.EmployeeID.String(),
-			CreatedBy:    p.CreatedBy.String(),
-			Title:        p.Title,
-			Description:  p.Description,
-			CreationType: string(p.CreationType),
-			Progress:     p.Progress,
-			Status:       string(p.Status),
-			CreatedAt:    p.CreatedAt,
-			UpdatedAt:    p.UpdatedAt,
+			ID:               p.ID.String(),
+			EmployeeID:       p.EmployeeID.String(),
+			CreatedBy:        p.CreatedBy.String(),
+			Title:            p.Title,
+			Description:      p.Description,
+			GenerationStatus: string(p.GenerationStatus),
+			CreationType:     string(p.CreationType),
+			Progress:         p.Progress,
+			Status:           string(p.Status),
+			CreatedAt:        p.CreatedAt,
+			UpdatedAt:        p.UpdatedAt,
 		})
 	}
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, dto.ListPlansResponse{
+		Plans: response,
+	})
 }
 
 func (h *PlanHandler) Update(c *gin.Context) {

@@ -7,30 +7,32 @@ import (
 
 func ToPlanModel(plan *domain.Plan) *model.PlanModel {
 	return &model.PlanModel{
-		ID:           plan.ID,
-		EmployeeID:   plan.EmployeeID,
-		CreatedBy:    plan.CreatedBy,
-		Title:        plan.Title,
-		Description:  plan.Description,
-		CreationType: string(plan.CreationType),
-		Progress:     int16(plan.Progress),
-		Status:       string(plan.Status),
-		CreatedAt:    plan.CreatedAt,
-		UpdatedAt:    plan.UpdatedAt,
+		ID:               plan.ID,
+		EmployeeID:       plan.EmployeeID,
+		CreatedBy:        plan.CreatedBy,
+		Title:            plan.Title,
+		Description:      plan.Description,
+		CreationType:     string(plan.CreationType),
+		Progress:         int16(plan.Progress),
+		GenerationStatus: string(plan.GenerationStatus),
+		Status:           string(plan.Status),
+		CreatedAt:        plan.CreatedAt,
+		UpdatedAt:        plan.UpdatedAt,
 	}
 }
 
 func ToPlanEntity(model *model.PlanModel) *domain.Plan {
 	return &domain.Plan{
-		ID:           model.ID,
-		EmployeeID:   model.EmployeeID,
-		CreatedBy:    model.CreatedBy,
-		Title:        model.Title,
-		Description:  model.Description,
-		CreationType: domain.CreationType(model.CreationType),
-		Progress:     int(model.Progress),
-		Status:       domain.PlanStatus(model.Status),
-		CreatedAt:    model.CreatedAt,
-		UpdatedAt:    model.UpdatedAt,
+		ID:               model.ID,
+		EmployeeID:       model.EmployeeID,
+		CreatedBy:        model.CreatedBy,
+		Title:            model.Title,
+		Description:      model.Description,
+		CreationType:     domain.CreationType(model.CreationType),
+		Progress:         int(model.Progress),
+		GenerationStatus: domain.GenerationStatus(model.GenerationStatus),
+		Status:           domain.PlanStatus(model.Status),
+		CreatedAt:        model.CreatedAt,
+		UpdatedAt:        model.UpdatedAt,
 	}
 }

@@ -6,6 +6,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type GenerationStatus string
+
+const (
+	GenerationPending    GenerationStatus = "pending"
+	GenerationProcessing GenerationStatus = "processing"
+	GenerationReady      GenerationStatus = "ready"
+	GenerationFailed     GenerationStatus = "failed"
+)
+
 type PlanStatus string
 
 const (
@@ -22,16 +31,17 @@ const (
 )
 
 type Plan struct {
-	ID           uuid.UUID
-	EmployeeID   uuid.UUID
-	CreatedBy    uuid.UUID
-	Title        string
-	Description  *string
-	CreationType CreationType
-	Progress     int
-	Status       PlanStatus
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID               uuid.UUID
+	EmployeeID       uuid.UUID
+	CreatedBy        uuid.UUID
+	Title            string
+	Description      *string
+	GenerationStatus GenerationStatus
+	CreationType     CreationType
+	Progress         int
+	Status           PlanStatus
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 func NewPlan(employeeID uuid.UUID, createdBy uuid.UUID, title string, description *string, creationType CreationType) *Plan {

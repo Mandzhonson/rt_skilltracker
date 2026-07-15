@@ -7,14 +7,12 @@ import (
 
 	"core_service/internal/domain"
 	"core_service/internal/repository/postgres"
-	"core_service/internal/usecase/ai"
 	"core_service/internal/usecase/user"
 
 	"github.com/google/uuid"
 )
 
 func (s *planService) CreateAI(ctx context.Context, input CreateAIInput) (uuid.UUID, error) {
-
 	if strings.TrimSpace(input.Topic) == "" {
 		return uuid.Nil, ErrInvalidTitle
 	}
@@ -47,64 +45,23 @@ func (s *planService) CreateAI(ctx context.Context, input CreateAIInput) (uuid.U
 		return uuid.Nil, ErrEmployeeNotAssigned
 	}
 
-	userSkills, err := s.skillRepo.ListByUserID(ctx, input.EmployeeID)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	skills := make([]string, 0, len(userSkills))
-	for _, skill := range userSkills {
-		skills = append(skills, skill.Name)
-	}
-
-	generated, err := s.aiService.GeneratePlan(
-		ctx,
-		ai.GeneratePlanInput{
-			Topic:          input.Topic,
-			Description:    input.Description,
-			ExistingSkills: skills,
-			Position:       employee.Position,
-		},
-	)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	var planDescription *string
-	if generated.Description != "" {
-		planDescription = &generated.Description
-	}
-
-	planEntity := domain.NewPlan(
+	plan := domain.NewPlan(
 		input.EmployeeID,
 		input.CreatedBy,
-		generated.Title,
-		planDescription,
+		input.Topic,
+		nil,
 		domain.CreationAI,
 	)
 
-	taskEntities := make([]*domain.Task, 0, len(generated.Tasks))
+	plan.GenerationStatus = domain.GenerationPending
 
-	for i, t := range generated.Tasks {
-
-		var desc *string
-		if t.Description != "" {
-			desc = &t.Description
-		}
-		taskEntities = append(taskEntities, domain.NewTask(uuid.Nil, t.Title, desc, i+1))
-	}
-
-	planID, err := s.planRepo.CreateWithTasks(ctx, planEntity, taskEntities)
+	planID, err := s.planRepo.Create(ctx, plan)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	planEntity.ID = planID
-
-	err = s.attachTesting(ctx, planEntity)
-	if err != nil {
-		return uuid.Nil, err
-	}
+	go s.generateAIPlan(context.Background(), planID)
 
 	return planID, nil
+
 }

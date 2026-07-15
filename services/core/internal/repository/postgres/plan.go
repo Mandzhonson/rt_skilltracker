@@ -36,11 +36,12 @@ func (r *planRepository) Create(ctx context.Context, plan *domain.Plan) (uuid.UU
 			created_by,
 			title,
 			description,
+			generation_status,
 			creation_type,
 			progress,
 			status
 		)
-		VALUES ($1,$2,$3,$4,$5,$6,$7)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 		RETURNING id
 	`
 
@@ -51,6 +52,7 @@ func (r *planRepository) Create(ctx context.Context, plan *domain.Plan) (uuid.UU
 		m.CreatedBy,
 		m.Title,
 		m.Description,
+		m.GenerationStatus,
 		m.CreationType,
 		m.Progress,
 		m.Status,
@@ -66,26 +68,28 @@ func (r *planRepository) Create(ctx context.Context, plan *domain.Plan) (uuid.UU
 func (r *planRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Plan, error) {
 	var m model.PlanModel
 	query := `
-		SELECT id, 
-			employee_id,
-			created_by,
-			title,
-			description,
-			creation_type,
-			progress,
-			status,
-			created_at,
-			updated_at
-
-		FROM plans
-		WHERE id = $1
-	`
+        SELECT 
+            id,
+            employee_id,
+            created_by,
+            title,
+            description,
+            generation_status,
+            creation_type,
+            progress,
+            status,
+            created_at,
+            updated_at
+        FROM plans
+        WHERE id = $1
+    `
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&m.ID,
 		&m.EmployeeID,
 		&m.CreatedBy,
 		&m.Title,
 		&m.Description,
+		&m.GenerationStatus,
 		&m.CreationType,
 		&m.Progress,
 		&m.Status,
@@ -151,6 +155,7 @@ func (r *planRepository) ListByEmployeeID(ctx context.Context, employeeID uuid.U
             created_by,
             title,
             description,
+			generation_status,
             creation_type,
             progress,
             status,
@@ -179,6 +184,7 @@ func (r *planRepository) ListByEmployeeID(ctx context.Context, employeeID uuid.U
 			&m.CreatedBy,
 			&m.Title,
 			&m.Description,
+			&m.GenerationStatus,
 			&m.CreationType,
 			&m.Progress,
 			&m.Status,
@@ -248,7 +254,7 @@ func (r *planRepository) GetEmployeePlan(ctx context.Context, employeeID uuid.UU
 
 func (r *planRepository) ListByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.Plan, error) {
 	query := `
-		SELECT id, employee_id, created_by, title, description, creation_type, 
+		SELECT id, employee_id, created_by, title, description, generation_status, creation_type, 
 		       progress, status, created_at, updated_at
 		FROM plans
 		WHERE created_by = $1
@@ -272,6 +278,7 @@ func (r *planRepository) ListByManager(ctx context.Context, managerID uuid.UUID)
 			&m.CreatedBy,
 			&m.Title,
 			&m.Description,
+			&m.GenerationStatus,
 			&m.CreationType,
 			&m.Progress,
 			&m.Status,
@@ -406,11 +413,12 @@ func (r *planRepository) createPlan(ctx context.Context, tx pgx.Tx, entity *doma
 		created_by,
 		title,
 		description,
+		generation_status,
 		creation_type,
 		progress,
 		status
 	)
-	VALUES ($1,$2,$3,$4,$5,$6,$7)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 	RETURNING id
 	`
 
@@ -423,6 +431,7 @@ func (r *planRepository) createPlan(ctx context.Context, tx pgx.Tx, entity *doma
 		entity.CreatedBy,
 		entity.Title,
 		entity.Description,
+		entity.GenerationStatus,
 		entity.CreationType,
 		entity.Progress,
 		entity.Status,
@@ -461,34 +470,63 @@ func (r *planRepository) createTask(ctx context.Context, tx pgx.Tx, task *domain
 	return err
 }
 
-func (r *planRepository) CreateWithTasks(ctx context.Context, plan *domain.Plan, tasks []*domain.Task) (uuid.UUID, error) {
-
+func (r *planRepository) CreateWithTasks(ctx context.Context, planID uuid.UUID, tasks []*domain.Task) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return uuid.Nil, err
+		return err
 	}
 
-	defer func() {
-		_ = tx.Rollback(ctx)
-	}()
-
-	planID, err := r.createPlan(ctx, tx, plan)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
+	defer tx.Rollback(ctx)
 	for _, task := range tasks {
-
 		task.PlanID = planID
-
 		if err := r.createTask(ctx, tx, task); err != nil {
-			return uuid.Nil, err
+			return err
 		}
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return uuid.Nil, err
+	return tx.Commit(ctx)
+}
+
+func (r *planRepository) UpdateGenerationStatus(ctx context.Context, planID uuid.UUID, status domain.GenerationStatus) error {
+	result, err := r.pool.Exec(
+		ctx,
+		`
+        UPDATE plans
+        SET generation_status = $2,
+            updated_at = NOW()
+        WHERE id = $1
+        `,
+		planID,
+		status,
+	)
+
+	if err != nil {
+		return err
 	}
 
-	return planID, nil
+	if result.RowsAffected() == 0 {
+		return ErrPlanNotFound
+	}
+
+	return nil
+}
+
+func (r *planRepository) UpdateAIContent(ctx context.Context, planID uuid.UUID, title string, description *string) error {
+
+	_, err := r.pool.Exec(
+		ctx,
+		`
+        UPDATE plans
+        SET
+            title = $2,
+            description = $3,
+            updated_at = NOW()
+        WHERE id = $1
+        `,
+		planID,
+		title,
+		description,
+	)
+
+	return err
 }

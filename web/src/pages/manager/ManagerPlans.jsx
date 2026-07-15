@@ -20,7 +20,6 @@ export const ManagerPlans = () => {
     description: '',
   });
   const [creating, setCreating] = useState(false);
-  const [createType, setCreateType] = useState(null);
 
   useEffect(() => {
     loadPlans();
@@ -40,8 +39,21 @@ export const ManagerPlans = () => {
     setError('');
     try {
       const response = await managerAPI.listPlans();
-      setPlans(response.data || []);
-      setFilteredPlans(response.data || []);
+      console.log('Plans response:', response.data);
+      
+      let plansData = [];
+      if (response.data) {
+        if (Array.isArray(response.data)) {
+          plansData = response.data;
+        } else if (response.data.plans && Array.isArray(response.data.plans)) {
+          plansData = response.data.plans;
+        } else {
+          plansData = [];
+        }
+      }
+      
+      setPlans(plansData);
+      setFilteredPlans(plansData);
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка загрузки планов');
     } finally {
@@ -53,7 +65,20 @@ export const ManagerPlans = () => {
     setLoadingEmployees(true);
     try {
       const response = await managerAPI.getEmployees();
-      setEmployees(response.data || []);
+      console.log('Employees response:', response.data);
+      
+      let employeesData = [];
+      if (response.data) {
+        if (Array.isArray(response.data)) {
+          employeesData = response.data;
+        } else if (response.data.employees && Array.isArray(response.data.employees)) {
+          employeesData = response.data.employees;
+        } else {
+          employeesData = [];
+        }
+      }
+      
+      setEmployees(employeesData);
     } catch (err) {
       console.error('Error loading employees:', err);
     } finally {
@@ -67,7 +92,6 @@ export const ManagerPlans = () => {
       loadEmployees();
     }
     setError('');
-    setCreateType(null);
   };
 
   const handleSubmit = async (e) => {
@@ -101,7 +125,7 @@ export const ManagerPlans = () => {
     setMessage('');
 
     try {
-      const response = await managerAPI.createAIPlan({
+      await managerAPI.createAIPlan({
         employee_id: formData.employee_id,
         topic: formData.title,
         description: formData.description || '',
@@ -138,6 +162,26 @@ export const ManagerPlans = () => {
     return colors[status] || 'bg-gray-100 text-gray-600';
   };
 
+  const getGenerationStatusLabel = (status) => {
+    const statuses = {
+      pending: '⏳ Ожидание',
+      processing: '🔄 Генерация...',
+      ready: '✅ Готово',
+      failed: '❌ Ошибка',
+    };
+    return statuses[status] || status;
+  };
+
+  const getGenerationStatusColor = (status) => {
+    const colors = {
+      pending: 'bg-yellow-100 text-yellow-700',
+      processing: 'bg-blue-100 text-blue-700 animate-pulse',
+      ready: 'bg-green-100 text-green-700',
+      failed: 'bg-red-100 text-red-700',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-600';
+  };
+
   const getEmployeeName = (employeeId) => {
     const employee = employees.find(e => e.id === employeeId);
     if (employee) {
@@ -159,6 +203,15 @@ export const ManagerPlans = () => {
       return '';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex items-center justify-center h-64">Загрузка...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -255,7 +308,6 @@ export const ManagerPlans = () => {
                     setShowCreateForm(false);
                     setFormData({ employee_id: '', title: '', description: '' });
                     setError('');
-                    setCreateType(null);
                   }}
                   className="btn btn-secondary"
                 >
@@ -294,9 +346,7 @@ export const ManagerPlans = () => {
         </div>
 
         <div className="card">
-          {loading ? (
-            <div className="text-center py-8">Загрузка...</div>
-          ) : filteredPlans.length === 0 ? (
+          {filteredPlans.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               {plans.length === 0 ? 'У вас пока нет планов. Создайте первый план!' : 'Планы не найдены'}
             </div>
@@ -320,6 +370,9 @@ export const ManagerPlans = () => {
                         </span>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(plan.status)}`}>
                           {getStatusLabel(plan.status)}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getGenerationStatusColor(plan.generation_status)}`}>
+                          {getGenerationStatusLabel(plan.generation_status)}
                         </span>
                         <span className="text-gray-600">
                           Прогресс: {plan.progress || 0}%
