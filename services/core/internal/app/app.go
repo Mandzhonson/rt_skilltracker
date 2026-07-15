@@ -21,6 +21,7 @@ import (
 	"core_service/internal/usecase/auth"
 	"core_service/internal/usecase/plan"
 	"core_service/internal/usecase/task"
+	"core_service/internal/usecase/test"
 	"core_service/internal/usecase/user"
 	"fmt"
 	"net/http"
@@ -68,28 +69,30 @@ func Run() error {
 	planRepository := postgresRepository.NewPlanRepository(pool)
 	taskRepository := postgresRepository.NewTaskRepository(pool)
 	skillRepository := postgresRepository.NewSkillRepository(pool)
+	testRepository := postgresRepository.NewTestRepository(pool)
 
 	jwtService := jwt.NewJWTService(cfg.JWT)
 	aiService := ai.NewAIService(ollama)
 	authService := auth.NewAuthService(authRepository, userRepository, jwtService, sessionRepository)
 	userService := user.NewUserService(userRepository, minioStorage)
 	adminService := admin.NewAdminService(userRepository, minioStorage)
-	planService := plan.NewPlanService(planRepository, userRepository, taskRepository, skillRepository, *aiService)
+	planService := plan.NewPlanService(planRepository, userRepository, taskRepository, skillRepository, testRepository, *aiService)
 	taskService := task.NewTaskService(taskRepository, planRepository, planService)
+	testService := test.NewTestService(testRepository, *taskService, planRepository, planService)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
 	adminHandler := handler.NewAdminHandler(adminService)
 	planHandler := handler.NewPlanHandler(planService)
 	taskHandler := handler.NewTaskHandler(taskService)
-	aiHandler := handler.NewAIHandler(aiService)
+	testHandler := handler.NewTestHandler(testService)
 
 	authMiddleware := middleware.AuthMiddleware(jwtService, sessionRepository)
 	adminMiddleware := middleware.AdminMiddleware()
 	managerMiddleware := middleware.ManagerMiddleware()
 	employeeMiddleware := middleware.EmployeeMiddleware()
 
-	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, aiHandler, authMiddleware, adminMiddleware, managerMiddleware, employeeMiddleware)
+	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, testHandler, authMiddleware, adminMiddleware, managerMiddleware, employeeMiddleware)
 
 	err = userService.CreateAdmin(
 		ctx,

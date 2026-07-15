@@ -52,6 +52,7 @@ type TaskRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
 	ListByPlanID(ctx context.Context, planID uuid.UUID) ([]*domain.Task, error)
+	CompleteTestingTask(ctx context.Context, planID uuid.UUID) error
 }
 
 type SkillRepository interface {
@@ -59,4 +60,13 @@ type SkillRepository interface {
 	Create(ctx context.Context, skill *domain.Skill) (uuid.UUID, error)
 	AttachToUser(ctx context.Context, userID uuid.UUID, skillID uuid.UUID, planID uuid.UUID) error
 	ListByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.Skill, error)
+}
+
+type TestRepository interface {
+	CreateWithQuestions(ctx context.Context, test *domain.Test, questions []*domain.Question) (uuid.UUID, error)
+	GetByPlanID(ctx context.Context, planID uuid.UUID) (*domain.Test, error)
+	GetQuestions(ctx context.Context, testID uuid.UUID) ([]*domain.Question, error)
+	CreateAttempt(ctx context.Context, attempt *domain.TestAttempt) (uuid.UUID, error)
+	CreateAnswers(ctx context.Context, answers []*domain.TestAnswer) error
+	GetAttempt(ctx context.Context, testID uuid.UUID, userID uuid.UUID) (*domain.TestAttempt, error)
 }

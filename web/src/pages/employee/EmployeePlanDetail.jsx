@@ -75,7 +75,6 @@ export const EmployeePlanDetail = () => {
         setGenerationMessage('Ваши навыки формируются на основе завершенного плана. Это может занять несколько минут. Вы можете продолжить работу.');
         setIsModalOpen(true);
         
-        // Проверяем статус генерации
         let attempts = 0;
         const maxAttempts = 60;
         
@@ -129,6 +128,18 @@ export const EmployeePlanDetail = () => {
 
     const activeTask = tasks.find((t) => t.id === active.id);
     if (!activeTask) return;
+
+    if (activeTask.status === 'done') {
+      setMessage('Нельзя перемещать выполненные задачи');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    if (activeTask.title === 'Пройти тестирование') {
+      setMessage('Для завершения этой задачи необходимо пройти тестирование');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
 
     let newStatus = null;
 
@@ -188,6 +199,10 @@ export const EmployeePlanDetail = () => {
   const todoTasks = tasks.filter(task => task.status === 'todo');
   const inProgressTasks = tasks.filter(task => task.status === 'in_progress');
   const doneTasks = tasks.filter(task => task.status === 'done');
+
+  const hasTestTask = tasks.some(task => 
+    task.title === 'Пройти тестирование' && task.status !== 'done'
+  );
 
   if (loading) {
     return (
@@ -250,16 +265,24 @@ export const EmployeePlanDetail = () => {
           {planData.description && (
             <p className="text-gray-600 mb-4">{planData.description}</p>
           )}
-          <div className="flex flex-wrap items-center gap-4 text-sm">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(planData.status)}`}>
               Статус: {getStatusLabel(planData.status)}
             </span>
             <span className="text-gray-600">
               Прогресс: {planData.progress || 0}%
             </span>
-            <span className="text-gray-500">
-              Создан: {formatDate(planData.created_at)}
+            <span className="text-gray-500 text-xs">
+              {formatDate(planData.created_at)}
             </span>
+            {hasTestTask && (
+              <button
+                onClick={() => navigate(`/employee/plans/${planId}/test`)}
+                className="!bg-gray-800 !text-white px-3 py-1 rounded text-xs font-medium hover:!bg-gray-900 shadow-sm"
+              >
+                Пройти тест
+              </button>
+            )}
           </div>
         </div>
 

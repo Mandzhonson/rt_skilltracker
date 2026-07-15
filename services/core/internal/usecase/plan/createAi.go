@@ -93,5 +93,17 @@ func (s *planService) CreateAI(ctx context.Context, input CreateAIInput) (uuid.U
 		taskEntities = append(taskEntities, domain.NewTask(uuid.Nil, t.Title, desc, i+1))
 	}
 
-	return s.planRepo.CreateWithTasks(ctx, planEntity, taskEntities)
+	planID, err := s.planRepo.CreateWithTasks(ctx, planEntity, taskEntities)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	planEntity.ID = planID
+
+	err = s.attachTesting(ctx, planEntity)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return planID, nil
 }

@@ -59,8 +59,16 @@ func (s *planService) Create(ctx context.Context, input CreatePlanInput) (uuid.U
 	)
 
 	id, err := s.planRepo.Create(ctx, entity)
+
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create plan: %w", err)
+	}
+
+	entity.ID = id
+
+	err = s.attachTesting(ctx, entity)
+	if err != nil {
+		return uuid.Nil, err
 	}
 
 	return id, nil

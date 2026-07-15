@@ -23,7 +23,7 @@ type HTTPConfig struct {
 	Port            string        `env:"HTTP_PORT" env-default:"8080"`
 	Host            string        `env:"HTTP_HOST" env-default:"0.0.0.0"`
 	ReadTimeout     time.Duration `env:"HTTP_READ_TIMEOUT" env-default:"5s"`
-	WriteTimeout    time.Duration `env:"HTTP_WRITE_TIMEOUT" env-default:"120s"`
+	WriteTimeout    time.Duration `env:"HTTP_WRITE_TIMEOUT" env-default:"300s"`
 	ShutdownTimeout time.Duration `env:"HTTP_SHUTDOWN_TIMEOUT" env-default:"10s"`
 }
 

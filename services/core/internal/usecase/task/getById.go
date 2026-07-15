@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *taskService) GetByID(ctx context.Context, managerID uuid.UUID, id uuid.UUID) (*domain.Task, error) {
+func (s *TaskService) GetByID(ctx context.Context, managerID uuid.UUID, id uuid.UUID) (*domain.Task, error) {
 
 	if id == uuid.Nil {
 		return nil, ErrInvalidTaskID

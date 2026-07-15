@@ -231,3 +231,27 @@ func (r *taskRepository) ListByPlanID(ctx context.Context, planID uuid.UUID) ([]
 
 	return tasks, nil
 }
+
+func (r *taskRepository) CompleteTestingTask(ctx context.Context, planID uuid.UUID) error {
+	query := `
+	UPDATE tasks
+	SET 
+		status = 'done',
+		updated_at = NOW()
+	WHERE 
+		plan_id = $1
+	AND 
+		title = 'Пройти тестирование'
+	`
+
+	result, err := r.pool.Exec(ctx, query, planID)
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrTaskNotFound
+	}
+
+	return nil
+}

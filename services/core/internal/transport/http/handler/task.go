@@ -19,6 +19,7 @@ type TaskService interface {
 	Update(ctx context.Context, input task.UpdateTaskInput) error
 	UpdateStatus(ctx context.Context, input task.UpdateTaskStatusInput) error
 	Delete(ctx context.Context, managerID uuid.UUID, taskID uuid.UUID) error
+	CompleteTestingTask(ctx context.Context, planID uuid.UUID, userID uuid.UUID) error
 }
 
 type TaskHandler struct {

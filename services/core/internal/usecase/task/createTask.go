@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *taskService) Create(ctx context.Context, input CreateTaskInput) (uuid.UUID, error) {
+func (s *TaskService) Create(ctx context.Context, input CreateTaskInput) (uuid.UUID, error) {
 
 	if strings.TrimSpace(input.Title) == "" {
 		return uuid.Nil, ErrInvalidTitle

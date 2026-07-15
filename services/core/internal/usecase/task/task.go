@@ -24,14 +24,14 @@ type PlanCompletionService interface {
 	GenerateSkillsIfCompleted(ctx context.Context, planID uuid.UUID) error
 }
 
-type taskService struct {
+type TaskService struct {
 	taskRepo              postgres.TaskRepository
 	planRepo              postgres.PlanRepository
 	planCompletionService PlanCompletionService
 }
 
-func NewTaskService(taskRepo postgres.TaskRepository, planRepo postgres.PlanRepository, planCompletionService PlanCompletionService) *taskService {
-	return &taskService{
+func NewTaskService(taskRepo postgres.TaskRepository, planRepo postgres.PlanRepository, planCompletionService PlanCompletionService) *TaskService {
+	return &TaskService{
 		taskRepo:              taskRepo,
 		planRepo:              planRepo,
 		planCompletionService: planCompletionService,

@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *taskService) Update(ctx context.Context, input UpdateTaskInput) error {
+func (s *TaskService) Update(ctx context.Context, input UpdateTaskInput) error {
 
 	if input.TaskID == uuid.Nil {
 		return ErrInvalidTaskID

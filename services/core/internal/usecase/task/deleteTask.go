@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *taskService) Delete(ctx context.Context, managerID uuid.UUID, taskID uuid.UUID) error {
+func (s *TaskService) Delete(ctx context.Context, managerID uuid.UUID, taskID uuid.UUID) error {
 	if taskID == uuid.Nil {
 		return ErrInvalidTaskID
 	}

@@ -13,6 +13,8 @@ import { ManagerPlanDetail } from './pages/manager/ManagerPlanDetail.jsx';
 import { EmployeePlans } from './pages/employee/EmployeePlans.jsx';
 import { EmployeePlanDetail } from './pages/employee/EmployeePlanDetail.jsx';
 import { EmployeeTasks } from './pages/employee/EmployeeTasks.jsx';
+import { EmployeeSkills } from './pages/employee/EmployeeSkills.jsx';
+import { EmployeeTest } from './pages/employee/EmployeeTest.jsx';
 
 function App() {
   return (
@@ -77,9 +79,21 @@ function App() {
             </ProtectedRoute>
           } />
           
+          <Route path="/employee/plans/:planId/test" element={
+            <ProtectedRoute allowedRoles={['employee']}>
+              <EmployeeTest />
+            </ProtectedRoute>
+          } />
+          
           <Route path="/employee/tasks" element={
             <ProtectedRoute allowedRoles={['employee']}>
               <EmployeeTasks />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/employee/skills" element={
+            <ProtectedRoute allowedRoles={['employee']}>
+              <EmployeeSkills />
             </ProtectedRoute>
           } />
           
