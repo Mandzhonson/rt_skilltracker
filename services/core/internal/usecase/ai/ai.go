@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	ErrInvalidTopic      = errors.New("topic is required")
+	ErrInvalidTopic      = errors.New("invalid topic")
+	ErrInvalidPlan       = errors.New("invalid plan")
 	ErrInvalidAIResponse = errors.New("invalid ai response")
 )
 

@@ -37,7 +37,7 @@ type PlanRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Plan, error)
 	ListByEmployeeID(ctx context.Context, employeeID uuid.UUID) ([]*domain.Plan, error)
 	GetEmployeePlan(ctx context.Context, employeeID uuid.UUID, planID uuid.UUID) (*domain.Plan, error)
-	RecalculateProgress(ctx context.Context, planID uuid.UUID) error
+	RecalculateProgress(ctx context.Context, planID uuid.UUID) (int, error)
 	ListByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.Plan, error)
 	GetByIDWithTasks(ctx context.Context, id uuid.UUID) (*domain.PlanWithTasks, error)
 	Update(ctx context.Context, planID uuid.UUID, title string, description *string) error
@@ -55,5 +55,8 @@ type TaskRepository interface {
 }
 
 type SkillRepository interface {
-	ListByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.UserSkill, error)
+	GetByName(ctx context.Context, name string) (*domain.Skill, error)
+	Create(ctx context.Context, skill *domain.Skill) (uuid.UUID, error)
+	AttachToUser(ctx context.Context, userID uuid.UUID, skillID uuid.UUID, planID uuid.UUID) error
+	ListByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.Skill, error)
 }

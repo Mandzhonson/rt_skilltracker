@@ -249,18 +249,33 @@ CREATE INDEX idx_test_answers_attempt ON test_answers(attempt_id);
 
 
 
+CREATE TABLE skills (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    name VARCHAR(255) NOT NULL UNIQUE,
+
+    category VARCHAR(100) NOT NULL,
+
+    description TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_skills_category ON skills(category);
+
 CREATE TABLE user_skills (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
+    skill_id UUID NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+
     plan_id UUID NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
-
-    name VARCHAR(255) NOT NULL,
-
+    
     confirmed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    UNIQUE(user_id, name)
+    
+    UNIQUE(user_id, skill_id)
 );
 
 CREATE INDEX idx_user_skills_user ON user_skills(user_id);
+CREATE INDEX idx_user_skills_skill ON user_skills(skill_id);

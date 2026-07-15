@@ -75,7 +75,7 @@ func Run() error {
 	userService := user.NewUserService(userRepository, minioStorage)
 	adminService := admin.NewAdminService(userRepository, minioStorage)
 	planService := plan.NewPlanService(planRepository, userRepository, taskRepository, skillRepository, *aiService)
-	taskService := task.NewTaskService(taskRepository, planRepository)
+	taskService := task.NewTaskService(taskRepository, planRepository, planService)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)

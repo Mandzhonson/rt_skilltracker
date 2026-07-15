@@ -58,7 +58,7 @@ func (s *taskService) Create(ctx context.Context, input CreateTaskInput) (uuid.U
 			err,
 		)
 	}
-	err = s.planRepo.RecalculateProgress(ctx, input.PlanID)
+	_, err = s.planRepo.RecalculateProgress(ctx, input.PlanID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("recalculate progress: %w", err)
 	}

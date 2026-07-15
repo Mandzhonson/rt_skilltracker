@@ -1,8 +1,11 @@
 package task
 
 import (
+	"context"
 	"core_service/internal/repository/postgres"
 	"errors"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -17,14 +20,20 @@ var (
 	ErrInvalidStatus     = errors.New("invalid task status")
 )
 
-type taskService struct {
-	taskRepo postgres.TaskRepository
-	planRepo postgres.PlanRepository
+type PlanCompletionService interface {
+	GenerateSkillsIfCompleted(ctx context.Context, planID uuid.UUID) error
 }
 
-func NewTaskService(taskRepo postgres.TaskRepository, planRepo postgres.PlanRepository) *taskService {
+type taskService struct {
+	taskRepo              postgres.TaskRepository
+	planRepo              postgres.PlanRepository
+	planCompletionService PlanCompletionService
+}
+
+func NewTaskService(taskRepo postgres.TaskRepository, planRepo postgres.PlanRepository, planCompletionService PlanCompletionService) *taskService {
 	return &taskService{
-		taskRepo: taskRepo,
-		planRepo: planRepo,
+		taskRepo:              taskRepo,
+		planRepo:              planRepo,
+		planCompletionService: planCompletionService,
 	}
 }

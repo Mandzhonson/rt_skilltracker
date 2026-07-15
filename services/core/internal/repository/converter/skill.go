@@ -5,22 +5,22 @@ import (
 	"core_service/internal/repository/model"
 )
 
-func ToUserSkillEntity(skill *model.UserSkillModel) *domain.UserSkill {
-	return &domain.UserSkill{
+func ToSkillEntity(skill *model.SkillModel) *domain.Skill {
+	return &domain.Skill{
 		ID:          skill.ID,
-		UserID:      skill.UserID,
-		PlanID:      skill.PlanID,
 		Name:        skill.Name,
-		ConfirmedAt: skill.ConfirmedAt,
+		Category:    skill.Category,
+		Description: skill.Description,
+		CreatedAt:   skill.CreatedAt,
 	}
 }
 
-func ToUserSkillModel(skill *domain.UserSkill) *model.UserSkillModel {
-	return &model.UserSkillModel{
+func ToSkillModel(skill *domain.Skill) *model.SkillModel {
+	return &model.SkillModel{
 		ID:          skill.ID,
-		UserID:      skill.UserID,
-		PlanID:      skill.PlanID,
 		Name:        skill.Name,
-		ConfirmedAt: skill.ConfirmedAt,
+		Category:    skill.Category,
+		Description: skill.Description,
+		CreatedAt:   skill.CreatedAt,
 	}
 }

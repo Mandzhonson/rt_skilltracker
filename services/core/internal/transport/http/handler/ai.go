@@ -11,6 +11,7 @@ import (
 
 type AIService interface {
 	GeneratePlan(ctx context.Context, input ai.GeneratePlanInput) (*ai.GeneratedPlan, error)
+	ExtractSkills(ctx context.Context, input ai.ExtractSkillsInput) ([]ai.SkillCandidate, error)
 }
 
 type AIHandler struct {

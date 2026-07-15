@@ -101,7 +101,8 @@ func (r *planRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Pla
 	return converter.ToPlanEntity(&m), nil
 }
 
-func (r *planRepository) RecalculateProgress(ctx context.Context, planID uuid.UUID) error {
+func (r *planRepository) RecalculateProgress(ctx context.Context, planID uuid.UUID) (int, error) {
+
 	query := `
 	UPDATE plans
 	SET
@@ -126,12 +127,19 @@ func (r *planRepository) RecalculateProgress(ctx context.Context, planID uuid.UU
 		FROM tasks
 		WHERE plan_id = $1
 	) x
-	WHERE plans.id = x.id;
+	WHERE plans.id = x.id
+	RETURNING plans.progress;
 	`
 
-	_, err := r.pool.Exec(ctx, query, planID)
+	var progress int
 
-	return err
+	err := r.pool.QueryRow(
+		ctx,
+		query,
+		planID,
+	).Scan(&progress)
+
+	return progress, err
 }
 
 func (r *planRepository) ListByEmployeeID(ctx context.Context, employeeID uuid.UUID) ([]*domain.Plan, error) {

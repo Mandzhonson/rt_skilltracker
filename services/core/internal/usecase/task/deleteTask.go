@@ -41,7 +41,7 @@ func (s *taskService) Delete(ctx context.Context, managerID uuid.UUID, taskID uu
 		}
 		return err
 	}
-	err = s.planRepo.RecalculateProgress(ctx, entity.PlanID)
+	_, err = s.planRepo.RecalculateProgress(ctx, entity.PlanID)
 	if err != nil {
 		return fmt.Errorf("recalculate progress: %w", err)
 	}

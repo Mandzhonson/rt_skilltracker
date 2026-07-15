@@ -16,3 +16,20 @@ type GeneratedPlan struct {
 	Description string          `json:"description"`
 	Tasks       []GeneratedTask `json:"tasks"`
 }
+
+type ExtractSkillsInput struct {
+	PlanTitle       string
+	PlanDescription string
+	Tasks           []string
+	ExistingSkills  []string
+}
+
+type ExtractSkillsResult struct {
+	Skills []SkillCandidate
+}
+
+type SkillCandidate struct {
+	Name        string `json:"name"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+}

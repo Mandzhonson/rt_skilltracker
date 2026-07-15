@@ -5,6 +5,7 @@ import { employeeAPI } from '../../api/employee.js';
 import { Navbar } from '../../components/Layout/Navbar.jsx';
 import { TaskCard } from '../../components/employee/TaskCard.jsx';
 import { TaskColumn } from '../../components/employee/TaskColumn.jsx';
+import { SkillsGenerationModal } from '../../components/employee/SkillsGenerationModal.jsx';
 
 export const EmployeeTasks = () => {
   const navigate = useNavigate();
@@ -14,6 +15,9 @@ export const EmployeeTasks = () => {
   const [message, setMessage] = useState('');
   const [updatingTaskId, setUpdatingTaskId] = useState(null);
   const [activeId, setActiveId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [generationMessage, setGenerationMessage] = useState('');
+  const [isGenerationComplete, setIsGenerationComplete] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -43,7 +47,7 @@ export const EmployeeTasks = () => {
           allTasks.push({
             ...task,
             plan_title: planData.title || 'Без названия',
-            plan_id: planData.id || plan.id
+            plan_id: planData.id || plan.id,
           });
         });
       });
@@ -63,19 +67,67 @@ export const EmployeeTasks = () => {
     setError('');
     setMessage('');
 
+    const previousTasks = [...tasks];
+    const updatedTasks = tasks.map(task => 
+      task.id === taskId ? { ...task, status: newStatus } : task
+    );
+    setTasks(updatedTasks);
+
     try {
       await employeeAPI.updateTaskStatus(taskId, newStatus);
       
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId ? { ...task, status: newStatus } : task
-        )
-      );
-      
-      setMessage('Статус задачи обновлен');
-      setTimeout(() => setMessage(''), 3000);
+      const updatedTask = updatedTasks.find(t => t.id === taskId);
+      if (updatedTask) {
+        const planTasks = updatedTasks.filter(t => t.plan_id === updatedTask.plan_id);
+        const allDone = planTasks.every(t => t.status === 'done');
+        
+        if (allDone && planTasks.length > 0) {
+          setIsGenerationComplete(false);
+          setGenerationMessage(`Навыки формируются на основе завершенного плана "${updatedTask.plan_title}". Это может занять несколько минут. Вы можете продолжить работу.`);
+          setIsModalOpen(true);
+          
+          let attempts = 0;
+          const maxAttempts = 60;
+          
+          const checkStatus = async () => {
+            try {
+              const status = await employeeAPI.getSkillsStatus(updatedTask.plan_id);
+              if (status.data.isGenerated && status.data.count > 0) {
+                setGenerationMessage(`Успешно сформировано ${status.data.count} навыков!`);
+                setIsGenerationComplete(true);
+                return true;
+              }
+              return false;
+            } catch (err) {
+              return false;
+            }
+          };
+
+          const interval = setInterval(async () => {
+            attempts++;
+            if (attempts >= maxAttempts) {
+              clearInterval(interval);
+              setGenerationMessage('Генерация навыков может занять больше времени. Вы можете проверить их позже в разделе "Мои навыки".');
+              setIsGenerationComplete(true);
+              return;
+            }
+
+            const done = await checkStatus();
+            if (done) {
+              clearInterval(interval);
+            }
+          }, 3000);
+
+          await checkStatus();
+        } else {
+          setMessage('Статус задачи обновлен');
+          setTimeout(() => setMessage(''), 3000);
+        }
+      }
     } catch (err) {
+      setTasks(previousTasks);
       setError(err.response?.data?.error || 'Ошибка обновления статуса');
+      setTimeout(() => setError(''), 3000);
     } finally {
       setUpdatingTaskId(null);
     }
@@ -243,6 +295,18 @@ export const EmployeeTasks = () => {
             ) : null}
           </DragOverlay>
         </DndContext>
+
+        <SkillsGenerationModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            if (isGenerationComplete) {
+              window.location.reload();
+            }
+          }}
+          message={generationMessage}
+          isComplete={isGenerationComplete}
+        />
       </div>
     </div>
   );

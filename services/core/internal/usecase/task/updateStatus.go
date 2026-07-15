@@ -59,11 +59,19 @@ func (s *taskService) UpdateStatus(ctx context.Context, input UpdateTaskStatusIn
 	if err != nil {
 		return err
 	}
+	progress, err := s.planRepo.RecalculateProgress(ctx, taskEntity.PlanID)
 
-	err = s.planRepo.RecalculateProgress(ctx, taskEntity.PlanID)
 	if err != nil {
 		return err
 	}
 
+	if progress == 100 {
+		go func(planID uuid.UUID) {
+			err := s.planCompletionService.GenerateSkillsIfCompleted(context.Background(), planID)
+			if err != nil {
+				// TODO: добавить slog.Error()
+			}
+		}(taskEntity.PlanID)
+	}
 	return nil
 }
