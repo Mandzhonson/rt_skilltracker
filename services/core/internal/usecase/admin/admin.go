@@ -3,7 +3,10 @@ package admin
 import (
 	"core_service/internal/repository/minio"
 	"core_service/internal/repository/postgres"
+	"errors"
 )
+
+var ErrInvalidPosition = errors.New("invalid position")
 
 type adminService struct {
 	userRepo postgres.UserRepository

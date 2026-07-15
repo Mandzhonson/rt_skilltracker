@@ -24,6 +24,7 @@ type AdminService interface {
 	RemoveManager(ctx context.Context, userID uuid.UUID) error
 	ListEmployeesByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.User, error)
 	GetUserAvatar(ctx context.Context, userID uuid.UUID) (io.ReadCloser, string, error)
+	UpdatePosition(ctx context.Context, userID uuid.UUID, position string) error
 }
 
 type AdminHandler struct {
@@ -123,6 +124,7 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 			FirstName: userRes.FirstName,
 			LastName:  userRes.LastName,
 			Role:      string(userRes.Role),
+			Position:  userRes.Position,
 			ManagerID: uuidPtrToString(userRes.ManagerID),
 			CreatedAt: userRes.CreatedAt,
 			UpdatedAt: userRes.UpdatedAt,
@@ -308,4 +310,33 @@ func (h *AdminHandler) GetUserAvatar(c *gin.Context) {
 	if err != nil {
 		return
 	}
+}
+
+func (h *AdminHandler) UpdatePosition(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+
+	var req dto.UpdatePositionRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	err = h.service.UpdatePosition(c.Request.Context(), id, req.Position)
+	if err != nil {
+		switch {
+		case errors.Is(err, admin.ErrInvalidPosition):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+	c.Status(http.StatusOK)
 }

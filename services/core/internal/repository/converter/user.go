@@ -17,6 +17,7 @@ func ToUserEntity(m *model.UserModel) *domain.User {
 		ManagerID:    m.ManagerID,
 		CreatedAt:    m.CreatedAt,
 		UpdatedAt:    m.UpdatedAt,
+		Position:     m.Position,
 	}
 }
 
@@ -32,5 +33,6 @@ func ToUserModel(m *domain.User) *model.UserModel {
 		ManagerID:    m.ManagerID,
 		CreatedAt:    m.CreatedAt,
 		UpdatedAt:    m.UpdatedAt,
+		Position:     m.Position,
 	}
 }

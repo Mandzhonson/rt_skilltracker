@@ -19,6 +19,11 @@ export const AdminUserDetail = () => {
   const [loadingManagers, setLoadingManagers] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Состояния для должности
+  const [positionInput, setPositionInput] = useState('');
+  const [isEditingPosition, setIsEditingPosition] = useState(false);
+  const [positionLoading, setPositionLoading] = useState(false);
+
   useEffect(() => {
     loadUser();
     loadManagers();
@@ -38,6 +43,7 @@ export const AdminUserDetail = () => {
     try {
       const response = await adminAPI.getUser(id);
       setUser(response.data);
+      setPositionInput(response.data.position || '');
       if (response.data.manager_id) {
         setSelectedManagerId(response.data.manager_id);
       }
@@ -115,6 +121,25 @@ export const AdminUserDetail = () => {
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка удаления менеджера');
       setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // Обработчик обновления должности
+  const handleUpdatePosition = async (e) => {
+    e.preventDefault();
+    setPositionLoading(true);
+    setError('');
+    try {
+      await adminAPI.updatePosition(id, { position: positionInput });
+      setMessage('Должность успешно обновлена');
+      setIsEditingPosition(false);
+      setTimeout(() => setMessage(''), 3000);
+      loadUser();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка обновления должности');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setPositionLoading(false);
     }
   };
 
@@ -241,6 +266,46 @@ export const AdminUserDetail = () => {
               <span className="px-3 py-1 inline-block rounded-full text-sm font-medium">
                 {getRoleLabel(user.role)}
               </span>
+            </div>
+
+            {/* Блок Должность */}
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-500">Должность</label>
+                <button
+                  onClick={() => {
+                    setIsEditingPosition(!isEditingPosition);
+                    setPositionInput(user.position || '');
+                  }}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  {isEditingPosition ? 'Отмена' : 'Изменить'}
+                </button>
+              </div>
+              
+              {isEditingPosition ? (
+                <form onSubmit={handleUpdatePosition} className="mt-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={positionInput}
+                      onChange={(e) => setPositionInput(e.target.value)}
+                      placeholder="Введите должность"
+                      className="input flex-1"
+                      disabled={positionLoading}
+                    />
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={positionLoading}
+                    >
+                      {positionLoading ? 'Сохранение...' : 'Сохранить'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <p className="text-gray-900">{user.position || 'Не указана'}</p>
+              )}
             </div>
 
             <div>

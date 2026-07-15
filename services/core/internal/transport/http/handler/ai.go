@@ -35,6 +35,7 @@ func (h *AIHandler) GeneratePlan(c *gin.Context) {
 	plan, err := h.service.GeneratePlan(c.Request.Context(), ai.GeneratePlanInput{
 		Topic:       req.Topic,
 		Description: req.Description,
+		Position:    req.Position,
 	},
 	)
 	if err != nil {

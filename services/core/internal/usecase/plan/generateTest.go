@@ -18,11 +18,15 @@ func (s *planService) generateTestForPlan(ctx context.Context, plan *domain.Plan
 		},
 		)
 	}
-
+	employee, err := s.userRepo.GetById(ctx, plan.EmployeeID)
+	if err != nil {
+		return err
+	}
 	generatedTest, err := s.aiService.GenerateTest(ctx, ai.GenerateTestInput{
 		PlanTitle:       plan.Title,
 		PlanDescription: deref(plan.Description),
 		Tasks:           generatedTasks,
+		Position:        employee.Position,
 	},
 	)
 

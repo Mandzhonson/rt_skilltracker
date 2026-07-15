@@ -29,6 +29,7 @@ type UserRepository interface {
 	RemoveManager(ctx context.Context, userID uuid.UUID) error
 	ListEmployeesByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.User, error)
 	ClearManagerAssignments(ctx context.Context, managerID uuid.UUID) error
+	UpdatePosition(ctx context.Context, userID uuid.UUID, position string) error
 }
 
 type PlanRepository interface {

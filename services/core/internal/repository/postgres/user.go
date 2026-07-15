@@ -44,7 +44,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 	var m model.UserModel
 
 	query := `
-	SELECT id, email, password_hash, first_name, last_name, avatar_key, role, manager_id, created_at, updated_at
+	SELECT id, email, password_hash, first_name, last_name, avatar_key, role, manager_id, created_at, updated_at, position
 	FROM users
 	WHERE email = $1`
 
@@ -59,6 +59,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 		&m.ManagerID,
 		&m.CreatedAt,
 		&m.UpdatedAt,
+		&m.Position,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -73,10 +74,10 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 
 func (r *userRepository) GetById(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	var m model.UserModel
-	query := `SELECT id, email, password_hash, first_name, last_name, avatar_key, role, manager_id, created_at, updated_at
+	query := `SELECT id, email, password_hash, first_name, last_name, avatar_key, role, manager_id, created_at, updated_at, position
 	FROM users
 	WHERE id=$1`
-	if err := r.pool.QueryRow(ctx, query, id).Scan(&m.ID, &m.Email, &m.PasswordHash, &m.FirstName, &m.LastName, &m.AvatarKey, &m.Role, &m.ManagerID, &m.CreatedAt, &m.UpdatedAt); err != nil {
+	if err := r.pool.QueryRow(ctx, query, id).Scan(&m.ID, &m.Email, &m.PasswordHash, &m.FirstName, &m.LastName, &m.AvatarKey, &m.Role, &m.ManagerID, &m.CreatedAt, &m.UpdatedAt, &m.Position); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
@@ -191,4 +192,24 @@ func (r *userRepository) ClearManagerAssignments(ctx context.Context, managerID 
 
 	_, err := r.pool.Exec(ctx, query, managerID)
 	return err
+}
+
+func (r *userRepository) UpdatePosition(ctx context.Context, userID uuid.UUID, position string) error {
+	const query = `
+        UPDATE users
+        SET position = $2,
+            updated_at = NOW()
+        WHERE id = $1
+    `
+
+	tag, err := r.pool.Exec(ctx, query, userID, position)
+	if err != nil {
+		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
+
+	return nil
 }

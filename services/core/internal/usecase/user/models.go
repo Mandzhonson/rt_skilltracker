@@ -27,4 +27,5 @@ type CreateUserInput struct {
 	FirstName string
 	LastName  string
 	Role      domain.Role
+	Position  string
 }

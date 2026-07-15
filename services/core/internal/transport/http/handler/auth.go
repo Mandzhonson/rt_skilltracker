@@ -7,6 +7,7 @@ import (
 	"core_service/internal/transport/http/middleware"
 	"core_service/internal/usecase/auth"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -43,6 +44,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			})
 
 		default:
+			slog.Error("login", slog.Any("error", err.Error()))
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "internal server error",
 			})

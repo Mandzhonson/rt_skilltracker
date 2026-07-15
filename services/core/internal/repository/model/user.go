@@ -17,4 +17,5 @@ type UserModel struct {
 	ManagerID    *uuid.UUID `db:"manager_id"`
 	CreatedAt    time.Time  `db:"created_at"`
 	UpdatedAt    time.Time  `db:"updated_at"`
+	Position     string     `db:"position"`
 }

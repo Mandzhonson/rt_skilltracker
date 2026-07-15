@@ -12,6 +12,7 @@ type UserResponse struct {
 	FirstName string  `json:"first_name"`
 	LastName  string  `json:"last_name"`
 	Role      string  `json:"role"`
+	Position  string  `json:"position"`
 	ManagerID *string `json:"manager_id,omitempty"`
 }
 
@@ -21,8 +22,8 @@ type UserDetailsResponse struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 
-	Role string `json:"role"`
-
+	Role      string  `json:"role"`
+	Position  string  `json:"position"`
 	ManagerID *string `json:"manager_id,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
@@ -35,4 +36,8 @@ type UpdateRoleRequest struct {
 
 type AssignManagerRequest struct {
 	ManagerID string `json:"manager_id" binding:"required,uuid"`
+}
+
+type UpdatePositionRequest struct {
+	Position string `json:"position"`
 }

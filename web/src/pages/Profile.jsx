@@ -271,6 +271,11 @@ export const Profile = () => {
               <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#2563eb' }}>{getRoleDisplay(user?.role)}</p>
             </div>
 
+            <div>
+              <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280' }}>Должность</label>
+              <p style={{ fontSize: '1.125rem', color: '#111827' }}>{user?.position || 'Не указана'}</p>
+            </div>
+
             {isEditing ? (
               <form onSubmit={handleProfileUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
                 <div>

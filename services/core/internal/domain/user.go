@@ -22,6 +22,7 @@ type User struct {
 	LastName     string
 	AvatarKey    *string
 	Role         Role
+	Position     string
 	ManagerID    *uuid.UUID
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
@@ -62,13 +63,14 @@ func (r Role) IsValid() bool {
 	}
 }
 
-func NewEmployee(email, passwordHash, firstName, lastName string) *User {
+func NewEmployee(email, passwordHash, firstName, lastName, position string) *User {
 	return &User{
 		Email:        email,
 		PasswordHash: passwordHash,
 		FirstName:    firstName,
 		LastName:     lastName,
 		Role:         RoleEmployee,
+		Position:     position,
 	}
 }
 

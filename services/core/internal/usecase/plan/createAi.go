@@ -63,6 +63,7 @@ func (s *planService) CreateAI(ctx context.Context, input CreateAIInput) (uuid.U
 			Topic:          input.Topic,
 			Description:    input.Description,
 			ExistingSkills: skills,
+			Position:       employee.Position,
 		},
 	)
 	if err != nil {

@@ -3,6 +3,7 @@ package ai
 type GeneratePlanInput struct {
 	Topic          string
 	Description    string
+	Position       string
 	ExistingSkills []string
 }
 
@@ -46,6 +47,7 @@ type GeneratedQuestion struct {
 type GenerateTestInput struct {
 	PlanTitle       string
 	PlanDescription string
+	Position        string
 	Tasks           []GeneratedTask
 }
 

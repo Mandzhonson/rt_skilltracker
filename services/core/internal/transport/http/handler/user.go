@@ -106,14 +106,9 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": err.Error(),
-			})
-
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		}
 		return
 	}
@@ -123,6 +118,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 		Email:     entity.Email,
 		FirstName: entity.FirstName,
 		LastName:  entity.LastName,
+		Position:  entity.Position,
 		Role:      string(entity.Role),
 	})
 }
@@ -355,6 +351,7 @@ func (h *UserHandler) GetEmployeesByManager(c *gin.Context) {
 			Email:     u.Email,
 			FirstName: u.FirstName,
 			LastName:  u.LastName,
+			Position:  u.Position,
 			Role:      string(u.Role),
 		})
 	}

@@ -17,6 +17,7 @@ func (s *userService) CreateUser(ctx context.Context, input CreateUserInput) (uu
 		input.Password,
 		input.FirstName,
 		input.LastName,
+		input.Position,
 	)
 	role := input.Role
 
