@@ -2,11 +2,14 @@ package router
 
 import (
 	"core_service/internal/transport/http/handler"
+	"core_service/internal/transport/http/middleware"
+	"log/slog"
 
 	"github.com/gin-gonic/gin"
 )
 
 func NewRouter(
+	log *slog.Logger,
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
 	adminHandler *handler.AdminHandler,
@@ -20,8 +23,8 @@ func NewRouter(
 	employeeMiddleware gin.HandlerFunc) *gin.Engine {
 	router := gin.New()
 
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	router.Use(middleware.Logger(log))
+	router.Use(middleware.Recovery(log))
 
 	api := router.Group("/api/v1")
 	{

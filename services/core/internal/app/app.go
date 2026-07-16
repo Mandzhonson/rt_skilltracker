@@ -8,6 +8,7 @@ import (
 	"core_service/internal/clients/redis"
 	"core_service/internal/config"
 	"core_service/internal/domain"
+	"core_service/internal/logger"
 	"core_service/internal/pkg/jwt"
 	minioStorage "core_service/internal/repository/minio"
 	postgresRepository "core_service/internal/repository/postgres"
@@ -31,6 +32,8 @@ import (
 )
 
 func Run() error {
+	log := logger.New()
+	log.Info("starting SkillTracker")
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
 		syscall.SIGINT,
@@ -41,36 +44,42 @@ func Run() error {
 
 	cfg, err := config.Load()
 	if err != nil {
+		log.Error("failed to load config", "error", err)
 		return err
 	}
 
 	pool, err := postgres.InitPool(ctx, cfg.PostgresDSN())
 	if err != nil {
+		log.Error("failed to connect postgres", "error", err)
 		return err
 	}
+	log.Info("postgres connected")
 	defer pool.Close()
 
 	rdb, err := redis.Init(ctx, cfg.Redis)
 	if err != nil {
+		log.Error("failed to connect redis", "error", err)
 		return err
 	}
+	log.Info("redis connected")
 	defer rdb.Close()
 
 	minio, err := minio.InitMinio(ctx, cfg.Minio)
 	if err != nil {
+		log.Error("failed to connect minio", "error", err)
 		return err
 	}
-
+	log.Info("minio connected")
 	ollama := ollama.InitOllama(cfg.Ollama)
 
-	minioStorage := minioStorage.NewMinioStorage(minio, cfg.Minio.Bucket)
-	sessionRepository := redisRepository.NewRedisSessionRepository(rdb)
-	userRepository := postgresRepository.NewUserRepository(pool)
-	authRepository := postgresRepository.NewAuthRepository(pool)
-	planRepository := postgresRepository.NewPlanRepository(pool)
-	taskRepository := postgresRepository.NewTaskRepository(pool)
-	skillRepository := postgresRepository.NewSkillRepository(pool)
-	testRepository := postgresRepository.NewTestRepository(pool)
+	minioStorage := minioStorage.NewMinioStorage(minio, cfg.Minio.Bucket, log)
+	sessionRepository := redisRepository.NewRedisSessionRepository(rdb, log)
+	userRepository := postgresRepository.NewUserRepository(pool, log)
+	authRepository := postgresRepository.NewAuthRepository(pool, log)
+	planRepository := postgresRepository.NewPlanRepository(pool, log)
+	taskRepository := postgresRepository.NewTaskRepository(pool, log)
+	skillRepository := postgresRepository.NewSkillRepository(pool, log)
+	testRepository := postgresRepository.NewTestRepository(pool, log)
 
 	jwtService := jwt.NewJWTService(cfg.JWT)
 	aiService := ai.NewAIService(ollama)
@@ -95,7 +104,7 @@ func Run() error {
 	managerMiddleware := middleware.ManagerMiddleware()
 	employeeMiddleware := middleware.EmployeeMiddleware()
 
-	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, testHandler, skillHandler, authMiddleware, adminMiddleware, managerMiddleware, employeeMiddleware)
+	router := router.NewRouter(log, authHandler, userHandler, adminHandler, planHandler, taskHandler, testHandler, skillHandler, authMiddleware, adminMiddleware, managerMiddleware, employeeMiddleware)
 
 	err = userService.CreateAdmin(
 		ctx,
@@ -119,18 +128,26 @@ func Run() error {
 	}
 
 	go func() {
+		log.Info("http server started", "addr", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			// сюда позже добавишь slog.Error(...)
+			log.Error("http server crashed", "error", err)
 		}
 	}()
 
 	<-ctx.Done()
 
+	log.Info("shutting down...")
 	shutdownCtx, cancel := context.WithTimeout(
 		context.Background(),
 		cfg.HTTP.ShutdownTimeout,
 	)
 	defer cancel()
 
-	return srv.Shutdown(shutdownCtx)
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Error("failed to shutdown server", "error", err)
+		return err
+	}
+
+	log.Info("server stopped")
+	return nil
 }

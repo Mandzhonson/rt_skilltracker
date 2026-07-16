@@ -7,6 +7,7 @@ import (
 	"core_service/internal/repository/model"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -17,11 +18,13 @@ var ErrPlanNotFound = errors.New("plan not found")
 
 type planRepository struct {
 	pool *pgxpool.Pool
+	log  *slog.Logger
 }
 
-func NewPlanRepository(pool *pgxpool.Pool) *planRepository {
+func NewPlanRepository(pool *pgxpool.Pool, log *slog.Logger) *planRepository {
 	return &planRepository{
 		pool: pool,
+		log:  log,
 	}
 }
 
@@ -59,6 +62,12 @@ func (r *planRepository) Create(ctx context.Context, plan *domain.Plan) (uuid.UU
 	).Scan(&id)
 
 	if err != nil {
+		r.log.Error("Failed to create plan",
+			slog.String("error", err.Error()),
+			slog.String("employee_id", m.EmployeeID.String()),
+			slog.String("created_by", m.CreatedBy.String()),
+			slog.String("title", m.Title),
+		)
 		return uuid.Nil, fmt.Errorf("repository.Create(plan): %w", err)
 	}
 
@@ -100,6 +109,10 @@ func (r *planRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Pla
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrPlanNotFound
 		}
+		r.log.Error("Failed to get plan by ID",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", id.String()),
+		)
 		return nil, fmt.Errorf("repository.GetByID(plan): %w", err)
 	}
 	return converter.ToPlanEntity(&m), nil
@@ -143,6 +156,13 @@ func (r *planRepository) RecalculateProgress(ctx context.Context, planID uuid.UU
 		planID,
 	).Scan(&progress)
 
+	if err != nil {
+		r.log.Error("Failed to recalculate progress",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
+	}
+
 	return progress, err
 }
 
@@ -168,6 +188,10 @@ func (r *planRepository) ListByEmployeeID(ctx context.Context, employeeID uuid.U
 
 	rows, err := r.pool.Query(ctx, query, employeeID)
 	if err != nil {
+		r.log.Error("Failed to list plans by employee ID",
+			slog.String("error", err.Error()),
+			slog.String("employee_id", employeeID.String()),
+		)
 		return nil, fmt.Errorf("repository.ListByEmployeeID(plan): %w", err)
 	}
 	defer rows.Close()
@@ -193,6 +217,10 @@ func (r *planRepository) ListByEmployeeID(ctx context.Context, employeeID uuid.U
 		)
 
 		if err != nil {
+			r.log.Error("Failed to scan plan row",
+				slog.String("error", err.Error()),
+				slog.String("employee_id", employeeID.String()),
+			)
 			return nil, err
 		}
 
@@ -200,6 +228,10 @@ func (r *planRepository) ListByEmployeeID(ctx context.Context, employeeID uuid.U
 	}
 
 	if err := rows.Err(); err != nil {
+		r.log.Error("Rows iteration error",
+			slog.String("error", err.Error()),
+			slog.String("employee_id", employeeID.String()),
+		)
 		return nil, err
 	}
 
@@ -245,7 +277,11 @@ func (r *planRepository) GetEmployeePlan(ctx context.Context, employeeID uuid.UU
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrPlanNotFound
 		}
-
+		r.log.Error("Failed to get employee plan",
+			slog.String("error", err.Error()),
+			slog.String("employee_id", employeeID.String()),
+			slog.String("plan_id", planID.String()),
+		)
 		return nil, err
 	}
 
@@ -263,6 +299,10 @@ func (r *planRepository) ListByManager(ctx context.Context, managerID uuid.UUID)
 
 	rows, err := r.pool.Query(ctx, query, managerID)
 	if err != nil {
+		r.log.Error("Failed to list plans by manager",
+			slog.String("error", err.Error()),
+			slog.String("manager_id", managerID.String()),
+		)
 		return nil, fmt.Errorf("query plans by manager: %w", err)
 	}
 	defer rows.Close()
@@ -286,6 +326,10 @@ func (r *planRepository) ListByManager(ctx context.Context, managerID uuid.UUID)
 			&m.UpdatedAt,
 		)
 		if err != nil {
+			r.log.Error("Failed to scan plan row",
+				slog.String("error", err.Error()),
+				slog.String("manager_id", managerID.String()),
+			)
 			return nil, fmt.Errorf("scan plan: %w", err)
 		}
 
@@ -293,6 +337,10 @@ func (r *planRepository) ListByManager(ctx context.Context, managerID uuid.UUID)
 	}
 
 	if err = rows.Err(); err != nil {
+		r.log.Error("Rows iteration error",
+			slog.String("error", err.Error()),
+			slog.String("manager_id", managerID.String()),
+		)
 		return nil, fmt.Errorf("rows iteration: %w", err)
 	}
 
@@ -319,6 +367,10 @@ func (r *planRepository) GetByIDWithTasks(ctx context.Context, id uuid.UUID) (*d
 
 	rows, err := r.pool.Query(ctx, query, id)
 	if err != nil {
+		r.log.Error("Failed to get tasks for plan",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", id.String()),
+		)
 		return nil, fmt.Errorf("query tasks: %w", err)
 	}
 	defer rows.Close()
@@ -346,6 +398,10 @@ func (r *planRepository) GetByIDWithTasks(ctx context.Context, id uuid.UUID) (*d
 	}
 
 	if err = rows.Err(); err != nil {
+		r.log.Error("Failed to scan task row",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", id.String()),
+		)
 		return nil, fmt.Errorf("rows iteration: %w", err)
 	}
 
@@ -376,6 +432,10 @@ func (r *planRepository) Update(ctx context.Context, planID uuid.UUID, title str
 
 	result, err := r.pool.Exec(ctx, query, args...)
 	if err != nil {
+		r.log.Error("Failed to update plan",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
 		return fmt.Errorf("update plan: %w", err)
 	}
 
@@ -395,6 +455,10 @@ func (r *planRepository) Delete(ctx context.Context, planID uuid.UUID) error {
 
 	result, err := r.pool.Exec(ctx, query, planID)
 	if err != nil {
+		r.log.Error("Failed to delete plan",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
 		return fmt.Errorf("delete plan: %w", err)
 	}
 
@@ -438,6 +502,11 @@ func (r *planRepository) createPlan(ctx context.Context, tx pgx.Tx, entity *doma
 	).Scan(&id)
 
 	if err != nil {
+		r.log.Error("Failed to create plan in transaction",
+			slog.String("error", err.Error()),
+			slog.String("employee_id", entity.EmployeeID.String()),
+			slog.String("created_by", entity.CreatedBy.String()),
+		)
 		return uuid.Nil, err
 	}
 
@@ -466,13 +535,23 @@ func (r *planRepository) createTask(ctx context.Context, tx pgx.Tx, task *domain
 		task.Position,
 		task.Status,
 	)
-
+	if err != nil {
+		r.log.Error("Failed to create task in transaction",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", task.PlanID.String()),
+			slog.String("title", task.Title),
+		)
+	}
 	return err
 }
 
 func (r *planRepository) CreateWithTasks(ctx context.Context, planID uuid.UUID, tasks []*domain.Task) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
+		r.log.Error("Failed to begin transaction for CreateWithTasks",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
 		return err
 	}
 
@@ -480,11 +559,22 @@ func (r *planRepository) CreateWithTasks(ctx context.Context, planID uuid.UUID, 
 	for _, task := range tasks {
 		task.PlanID = planID
 		if err := r.createTask(ctx, tx, task); err != nil {
+			r.log.Error("Failed to create task in CreateWithTasks",
+				slog.String("error", err.Error()),
+				slog.String("plan_id", planID.String()),
+			)
 			return err
 		}
 	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		r.log.Error("Failed to commit transaction in CreateWithTasks",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
+	}
 
-	return tx.Commit(ctx)
+	return err
 }
 
 func (r *planRepository) UpdateGenerationStatus(ctx context.Context, planID uuid.UUID, status domain.GenerationStatus) error {
@@ -501,6 +591,11 @@ func (r *planRepository) UpdateGenerationStatus(ctx context.Context, planID uuid
 	)
 
 	if err != nil {
+		r.log.Error("Failed to update generation status",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+			slog.String("status", string(status)),
+		)
 		return err
 	}
 
@@ -528,6 +623,13 @@ func (r *planRepository) UpdateAIContent(ctx context.Context, planID uuid.UUID, 
 		description,
 	)
 
+	if err != nil {
+		r.log.Error("Failed to update AI content",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
+	}
+
 	return err
 }
 
@@ -535,6 +637,10 @@ func (r *planRepository) Archive(ctx context.Context, planID uuid.UUID) error {
 
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
+		r.log.Error("Failed to begin transaction for Archive",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
 		return err
 	}
 	defer tx.Rollback(ctx)
@@ -548,9 +654,21 @@ func (r *planRepository) Archive(ctx context.Context, planID uuid.UUID) error {
 	`, planID)
 
 	if err != nil {
+		r.log.Error("Failed to archive plan",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
 		return err
 	}
-	return tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		r.log.Error("Failed to commit transaction for Archive",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
+	}
+
+	return err
 }
 
 func (r *planRepository) ListAllByEmployeeID(ctx context.Context, employeeID uuid.UUID) ([]*domain.Plan, error) {
@@ -574,6 +692,10 @@ func (r *planRepository) ListAllByEmployeeID(ctx context.Context, employeeID uui
 
 	rows, err := r.pool.Query(ctx, query, employeeID)
 	if err != nil {
+		r.log.Error("Failed to list all plans by employee ID",
+			slog.String("error", err.Error()),
+			slog.String("employee_id", employeeID.String()),
+		)
 		return nil, fmt.Errorf("repository.ListAllByEmployeeID(plan): %w", err)
 	}
 	defer rows.Close()
@@ -597,6 +719,10 @@ func (r *planRepository) ListAllByEmployeeID(ctx context.Context, employeeID uui
 			&m.UpdatedAt,
 		)
 		if err != nil {
+			r.log.Error("Failed to scan plan row in ListAllByEmployeeID",
+				slog.String("error", err.Error()),
+				slog.String("employee_id", employeeID.String()),
+			)
 			return nil, fmt.Errorf("repository.ListAllByEmployeeID(plan): %w", err)
 		}
 
@@ -604,6 +730,10 @@ func (r *planRepository) ListAllByEmployeeID(ctx context.Context, employeeID uui
 	}
 
 	if err := rows.Err(); err != nil {
+		r.log.Error("Rows iteration error in ListAllByEmployeeID",
+			slog.String("error", err.Error()),
+			slog.String("employee_id", employeeID.String()),
+		)
 		return nil, fmt.Errorf("repository.ListAllByEmployeeID(plan): %w", err)
 	}
 
@@ -630,5 +760,12 @@ func (r *planRepository) ManagerOwnsPlan(ctx context.Context, managerID uuid.UUI
 		managerID,
 	).Scan(&exists)
 
+	if err != nil {
+		r.log.Error("Failed to check if manager owns plan",
+			slog.String("error", err.Error()),
+			slog.String("manager_id", managerID.String()),
+			slog.String("plan_id", planID.String()),
+		)
+	}
 	return exists, err
 }

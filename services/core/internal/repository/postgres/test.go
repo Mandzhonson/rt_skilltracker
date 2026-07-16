@@ -6,6 +6,7 @@ import (
 	"core_service/internal/repository/converter"
 	"core_service/internal/repository/model"
 	"errors"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -16,17 +17,23 @@ var ErrTestNotFound = errors.New("test not found")
 
 type testRepository struct {
 	pool *pgxpool.Pool
+	log  *slog.Logger
 }
 
-func NewTestRepository(pool *pgxpool.Pool) *testRepository {
+func NewTestRepository(pool *pgxpool.Pool, log *slog.Logger) *testRepository {
 	return &testRepository{
 		pool: pool,
+		log:  log,
 	}
 }
 
 func (r *testRepository) CreateWithQuestions(ctx context.Context, test *domain.Test, questions []*domain.Question) (uuid.UUID, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
+		r.log.Error("Failed to begin transaction for CreateWithQuestions",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", test.PlanID.String()),
+		)
 		return uuid.Nil, err
 	}
 	defer tx.Rollback(ctx)
@@ -45,6 +52,10 @@ func (r *testRepository) CreateWithQuestions(ctx context.Context, test *domain.T
 	).Scan(&testID)
 
 	if err != nil {
+		r.log.Error("Failed to create test",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", test.PlanID.String()),
+		)
 		return uuid.Nil, err
 	}
 
@@ -78,6 +89,11 @@ func (r *testRepository) CreateWithQuestions(ctx context.Context, test *domain.T
 		).Scan(&questionID)
 
 		if err != nil {
+			r.log.Error("Failed to create question",
+				slog.String("error", err.Error()),
+				slog.String("plan_id", q.PlanID.String()),
+				slog.String("question_text", q.QuestionText),
+			)
 			return uuid.Nil, err
 		}
 
@@ -96,12 +112,21 @@ func (r *testRepository) CreateWithQuestions(ctx context.Context, test *domain.T
 		)
 
 		if err != nil {
+			r.log.Error("Failed to associate question with test",
+				slog.String("error", err.Error()),
+				slog.String("test_id", testID.String()),
+				slog.String("question_id", questionID.String()),
+			)
 			return uuid.Nil, err
 		}
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
+		r.log.Error("Failed to commit transaction for CreateWithQuestions",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", test.PlanID.String()),
+		)
 		return uuid.Nil, err
 	}
 	return testID, nil
@@ -131,6 +156,10 @@ func (r *testRepository) GetByPlanID(ctx context.Context, planID uuid.UUID) (*do
 			return nil, ErrTestNotFound
 		}
 
+		r.log.Error("Failed to get test by plan ID",
+			slog.String("error", err.Error()),
+			slog.String("plan_id", planID.String()),
+		)
 		return nil, err
 	}
 
@@ -159,6 +188,10 @@ func (r *testRepository) GetQuestions(ctx context.Context, testID uuid.UUID) ([]
 
 	rows, err := r.pool.Query(ctx, query, testID)
 	if err != nil {
+		r.log.Error("Failed to get questions for test",
+			slog.String("error", err.Error()),
+			slog.String("test_id", testID.String()),
+		)
 		return nil, err
 	}
 
@@ -184,10 +217,23 @@ func (r *testRepository) GetQuestions(ctx context.Context, testID uuid.UUID) ([]
 		)
 
 		if err != nil {
+			r.log.Error("Failed to scan question row",
+				slog.String("error", err.Error()),
+				slog.String("test_id", testID.String()),
+			)
 			return nil, err
 		}
 		questions = append(questions, converter.ToQuestionEntity(&entity))
 	}
+
+	if err = rows.Err(); err != nil {
+		r.log.Error("Rows iteration error in GetQuestions",
+			slog.String("error", err.Error()),
+			slog.String("test_id", testID.String()),
+		)
+		return nil, err
+	}
+
 	return questions, nil
 }
 
@@ -213,12 +259,24 @@ func (r *testRepository) CreateAttempt(ctx context.Context, attempt *domain.Test
 		attempt.Passed,
 	).Scan(&id)
 
-	return id, err
+	if err != nil {
+		r.log.Error("Failed to create test attempt",
+			slog.String("error", err.Error()),
+			slog.String("test_id", attempt.TestID.String()),
+			slog.String("user_id", attempt.UserID.String()),
+		)
+		return uuid.Nil, err
+	}
+
+	return id, nil
 }
 
 func (r *testRepository) CreateAnswers(ctx context.Context, answers []*domain.TestAnswer) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
+		r.log.Error("Failed to begin transaction for CreateAnswers",
+			slog.String("error", err.Error()),
+		)
 		return err
 	}
 
@@ -242,11 +300,24 @@ func (r *testRepository) CreateAnswers(ctx context.Context, answers []*domain.Te
 		)
 
 		if err != nil {
+			r.log.Error("Failed to create test answer",
+				slog.String("error", err.Error()),
+				slog.String("attempt_id", a.AttemptID.String()),
+				slog.String("question_id", a.QuestionID.String()),
+			)
 			return err
 		}
 	}
 
-	return tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		r.log.Error("Failed to commit transaction for CreateAnswers",
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	return nil
 }
 
 func (r *testRepository) GetAttempt(ctx context.Context, testID uuid.UUID, userID uuid.UUID) (*domain.TestAttempt, error) {
@@ -285,6 +356,14 @@ func (r *testRepository) GetAttempt(ctx context.Context, testID uuid.UUID, userI
 	)
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		r.log.Error("Failed to get test attempt",
+			slog.String("error", err.Error()),
+			slog.String("test_id", testID.String()),
+			slog.String("user_id", userID.String()),
+		)
 		return nil, err
 	}
 
@@ -306,6 +385,15 @@ func (r *testRepository) FinishAttempt(ctx context.Context, attemptID uuid.UUID,
 		passed,
 		attemptID,
 	)
+
+	if err != nil {
+		r.log.Error("Failed to finish test attempt",
+			slog.String("error", err.Error()),
+			slog.String("attempt_id", attemptID.String()),
+			slog.Int("score", score),
+			slog.Bool("passed", passed),
+		)
+	}
 
 	return err
 }

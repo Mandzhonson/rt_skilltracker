@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,47 +27,74 @@ type SessionRepository interface {
 }
 
 type RedisSessionRepository struct {
-	r *redis.Client
+	r   *redis.Client
+	log *slog.Logger
 }
 
-func NewRedisSessionRepository(r *redis.Client) *RedisSessionRepository {
+func NewRedisSessionRepository(r *redis.Client, log *slog.Logger) *RedisSessionRepository {
 	return &RedisSessionRepository{
-		r: r,
+		r:   r,
+		log: log,
 	}
 }
 
 func (s *RedisSessionRepository) BlacklistAccessToken(ctx context.Context, jti string, ttl time.Duration) error {
-	return s.r.Set(ctx, blacklistKey(jti), "1", ttl).Err()
+	err := s.r.Set(ctx, blacklistKey(jti), "1", ttl).Err()
+	if err != nil {
+		s.log.Error("Failed to blacklist access token",
+			slog.String("error", err.Error()),
+			slog.String("jti", jti),
+			slog.Duration("ttl", ttl),
+		)
+		return err
+	}
+	return nil
 }
 
 func (s *RedisSessionRepository) IsBlacklisted(ctx context.Context, jti string) (bool, error) {
 	exists, err := s.r.Exists(ctx, blacklistKey(jti)).Result()
 	if err != nil {
+		s.log.Error("Failed to check if token is blacklisted",
+			slog.String("error", err.Error()),
+			slog.String("jti", jti),
+		)
 		return false, err
 	}
-	return exists == 1, nil
+
+	isBlacklisted := exists == 1
+	if isBlacklisted {
+		s.log.Info("Token is blacklisted",
+			slog.String("jti", jti),
+		)
+	}
+	return isBlacklisted, nil
 }
 
-func (s *RedisSessionRepository) SaveSession(
-	ctx context.Context,
-	refreshJTI string,
-	userID uuid.UUID,
-	tokenHash string,
-	ttl time.Duration,
-) error {
+func (s *RedisSessionRepository) SaveSession(ctx context.Context, refreshJTI string, userID uuid.UUID, tokenHash string, ttl time.Duration) error {
 
 	key := sessionKey(refreshJTI)
 
-	if err := s.r.HSet(
-		ctx,
-		key,
-		"user_id", userID.String(),
-		"token_hash", tokenHash,
-	).Err(); err != nil {
+	if err := s.r.HSet(ctx, key, "user_id", userID.String(), "token_hash", tokenHash).Err(); err != nil {
+		s.log.Error("Failed to save session",
+			slog.String("error", err.Error()),
+			slog.String("refresh_jti", refreshJTI),
+			slog.String("user_id", userID.String()),
+			slog.Duration("ttl", ttl),
+		)
 		return err
 	}
 
-	return s.r.Expire(ctx, key, ttl).Err()
+	if err := s.r.Expire(ctx, key, ttl).Err(); err != nil {
+		s.log.Error("Failed to set session expiration",
+			slog.String("error", err.Error()),
+			slog.String("refresh_jti", refreshJTI),
+			slog.String("user_id", userID.String()),
+			slog.Duration("ttl", ttl),
+		)
+		return err
+	}
+
+	return nil
 }
 
 func (s *RedisSessionRepository) GetSession(
@@ -76,6 +104,10 @@ func (s *RedisSessionRepository) GetSession(
 
 	values, err := s.r.HGetAll(ctx, sessionKey(refreshJTI)).Result()
 	if err != nil {
+		s.log.Error("Failed to get session",
+			slog.String("error", err.Error()),
+			slog.String("refresh_jti", refreshJTI),
+		)
 		return nil, err
 	}
 
@@ -85,6 +117,11 @@ func (s *RedisSessionRepository) GetSession(
 
 	userID, err := uuid.Parse(values["user_id"])
 	if err != nil {
+		s.log.Error("Failed to parse user_id from session",
+			slog.String("error", err.Error()),
+			slog.String("refresh_jti", refreshJTI),
+			slog.String("user_id_value", values["user_id"]),
+		)
 		return nil, err
 	}
 
@@ -94,11 +131,17 @@ func (s *RedisSessionRepository) GetSession(
 	}, nil
 }
 
-func (s *RedisSessionRepository) DeleteSession(
-	ctx context.Context,
-	refreshJTI string,
-) error {
-	return s.r.Del(ctx, sessionKey(refreshJTI)).Err()
+func (s *RedisSessionRepository) DeleteSession(ctx context.Context, refreshJTI string) error {
+	err := s.r.Del(ctx, sessionKey(refreshJTI)).Err()
+	if err != nil {
+		s.log.Error("Failed to delete session",
+			slog.String("error", err.Error()),
+			slog.String("refresh_jti", refreshJTI),
+		)
+		return err
+	}
+
+	return nil
 }
 
 func blacklistKey(jti string) string {

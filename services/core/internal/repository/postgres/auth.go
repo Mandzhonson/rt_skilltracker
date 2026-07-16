@@ -7,6 +7,7 @@ import (
 	"core_service/internal/repository/model"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,11 +20,13 @@ var (
 
 type authRepository struct {
 	pool *pgxpool.Pool
+	log  *slog.Logger
 }
 
-func NewAuthRepository(pool *pgxpool.Pool) *authRepository {
+func NewAuthRepository(pool *pgxpool.Pool, log *slog.Logger) *authRepository {
 	return &authRepository{
 		pool: pool,
+		log:  log,
 	}
 }
 
@@ -31,6 +34,11 @@ func (r *authRepository) SaveRefreshToken(ctx context.Context, e domain.RefreshT
 	m := converter.ToRefreshTokenModel(e)
 	query := `INSERT INTO refresh_tokens(user_id, jti, token_hash, expires_at, revoked, created_at) VALUES($1,$2,$3,$4,$5,$6)`
 	if _, err := r.pool.Exec(ctx, query, m.UserID, m.JTI, m.TokenHash, m.ExpiresAt, m.Revoked, m.CreatedAt); err != nil {
+		r.log.Error("Failed to save refresh token",
+			slog.String("error", err.Error()),
+			slog.String("user_id", m.UserID.String()),
+			slog.String("jti", m.JTI),
+		)
 		return fmt.Errorf("repository.SaveRefreshToken: %w", err)
 	}
 	return nil
@@ -56,6 +64,10 @@ func (r *authRepository) GetRefreshToken(ctx context.Context, jti string) (*doma
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrRefreshTokenNotFound
 		}
+		r.log.Error("Failed to get refresh token",
+			slog.String("error", err.Error()),
+			slog.String("jti", jti),
+		)
 		return nil, fmt.Errorf("repository.GetRefreshToken: %w", err)
 	}
 
@@ -70,6 +82,10 @@ func (r *authRepository) DeleteRefreshToken(ctx context.Context, jti string) err
 
 	_, err := r.pool.Exec(ctx, query, jti)
 	if err != nil {
+		r.log.Error("Failed to delete refresh token",
+			slog.String("error", err.Error()),
+			slog.String("jti", jti),
+		)
 		return fmt.Errorf("repository.DeleteRefreshToken: %w", err)
 	}
 

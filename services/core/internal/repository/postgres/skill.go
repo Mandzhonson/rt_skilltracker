@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"log/slog"
 
 	"core_service/internal/domain"
 	"core_service/internal/repository/converter"
@@ -13,11 +14,13 @@ import (
 
 type skillRepository struct {
 	pool *pgxpool.Pool
+	log  *slog.Logger
 }
 
-func NewSkillRepository(pool *pgxpool.Pool) *skillRepository {
+func NewSkillRepository(pool *pgxpool.Pool, log *slog.Logger) *skillRepository {
 	return &skillRepository{
 		pool: pool,
+		log:  log,
 	}
 }
 
@@ -39,6 +42,10 @@ func (r *skillRepository) ListByUserID(ctx context.Context, userID uuid.UUID) ([
 
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
+		r.log.Error("Failed to list skills by user ID",
+			slog.String("error", err.Error()),
+			slog.String("user_id", userID.String()),
+		)
 		return nil, err
 	}
 	defer rows.Close()
@@ -56,13 +63,25 @@ func (r *skillRepository) ListByUserID(ctx context.Context, userID uuid.UUID) ([
 			&skill.CreatedAt,
 		)
 		if err != nil {
+			r.log.Error("Failed to scan skill row",
+				slog.String("error", err.Error()),
+				slog.String("user_id", userID.String()),
+			)
 			return nil, err
 		}
 
 		result = append(result, converter.ToSkillEntity(&skill))
 	}
 
-	return result, rows.Err()
+	if err = rows.Err(); err != nil {
+		r.log.Error("Rows iteration error in ListByUserID",
+			slog.String("error", err.Error()),
+			slog.String("user_id", userID.String()),
+		)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (r *skillRepository) GetByName(ctx context.Context, name string) (*domain.Skill, error) {
@@ -89,6 +108,10 @@ func (r *skillRepository) GetByName(ctx context.Context, name string) (*domain.S
 	)
 
 	if err != nil {
+		r.log.Error("Failed to get skill by name",
+			slog.String("error", err.Error()),
+			slog.String("name", name),
+		)
 		return nil, err
 	}
 
@@ -116,7 +139,16 @@ func (r *skillRepository) Create(ctx context.Context, skill *domain.Skill) (uuid
 		skill.Description,
 	).Scan(&id)
 
-	return id, err
+	if err != nil {
+		r.log.Error("Failed to create skill",
+			slog.String("error", err.Error()),
+			slog.String("name", skill.Name),
+			slog.String("category", string(skill.Category)),
+		)
+		return uuid.Nil, err
+	}
+
+	return id, nil
 }
 
 func (r *skillRepository) AttachToUser(ctx context.Context, userID uuid.UUID, skillID uuid.UUID, planID uuid.UUID) error {
@@ -139,6 +171,15 @@ func (r *skillRepository) AttachToUser(ctx context.Context, userID uuid.UUID, sk
 		skillID,
 		planID,
 	)
+
+	if err != nil {
+		r.log.Error("Failed to attach skill to user",
+			slog.String("error", err.Error()),
+			slog.String("user_id", userID.String()),
+			slog.String("skill_id", skillID.String()),
+			slog.String("plan_id", planID.String()),
+		)
+	}
 
 	return err
 }
