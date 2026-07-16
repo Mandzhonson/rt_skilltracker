@@ -29,10 +29,6 @@ export const ManagerPlanDetail = () => {
   });
 
   useEffect(() => {
-    if (!planId || planId === 'undefined' || planId === 'create' || planId === 'create-ai') {
-      navigate('/manager/plans');
-      return;
-    }
     loadPlan();
   }, [planId]);
 
@@ -41,13 +37,8 @@ export const ManagerPlanDetail = () => {
     setError('');
     try {
       const response = await managerAPI.getPlan(planId);
-      console.log('Plan detail response:', response.data);
-      
-      const planData = response.data.plan || response.data;
-      const tasksData = response.data.tasks || [];
-      
-      setPlan(planData);
-      setTasks(tasksData);
+      setPlan(response.data);
+      setTasks(response.data.tasks || []);
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка загрузки плана');
     } finally {
@@ -57,6 +48,11 @@ export const ManagerPlanDetail = () => {
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
+    if (planData.status === 'archived') {
+      setError('Нельзя добавлять задачи в архивированный план');
+      return;
+    }
+    
     setLoadingTask(true);
     setError('');
     setMessage('');
@@ -80,6 +76,11 @@ export const ManagerPlanDetail = () => {
 
   const handleUpdateTask = async (e) => {
     e.preventDefault();
+    if (planData.status === 'archived') {
+      setError('Нельзя редактировать задачи в архивированном плане');
+      return;
+    }
+    
     setLoadingTask(true);
     setError('');
     setMessage('');
@@ -102,6 +103,11 @@ export const ManagerPlanDetail = () => {
   };
 
   const handleDeleteTask = async (taskId) => {
+    if (planData.status === 'archived') {
+      setError('Нельзя удалять задачи из архивированного плана');
+      return;
+    }
+    
     if (!confirm('Удалить задачу?')) return;
     try {
       await managerAPI.deleteTask(taskId);
@@ -123,7 +129,7 @@ export const ManagerPlanDetail = () => {
       await managerAPI.deletePlan(planId);
       setMessage('План успешно удален');
       setTimeout(() => {
-        navigate('/manager/plans');
+        navigate('/manager');
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка удаления плана');
@@ -133,6 +139,11 @@ export const ManagerPlanDetail = () => {
 
   const handleUpdatePlan = async (e) => {
     e.preventDefault();
+    if (planData.status === 'archived') {
+      setError('Нельзя редактировать архивированный план');
+      return;
+    }
+    
     setLoading(true);
     setError('');
     setMessage('');
@@ -153,10 +164,29 @@ export const ManagerPlanDetail = () => {
     }
   };
 
+  const handleArchivePlan = async () => {
+    if (!confirm('Архивировать план? Он станет недоступен для сотрудника.')) return;
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await managerAPI.archivePlan(planId);
+      setMessage('План успешно архивирован');
+      setTimeout(() => {
+        navigate('/manager');
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка архивации плана');
+      setLoading(false);
+    }
+  };
+
   const startEditingPlan = () => {
+    const planData = plan.plan || plan;
     setEditPlanForm({
-      title: plan?.title || '',
-      description: plan?.description || '',
+      title: planData.title || '',
+      description: planData.description || '',
     });
     setEditingPlan(true);
   };
@@ -195,26 +225,6 @@ export const ManagerPlanDetail = () => {
       active: 'bg-blue-100 text-blue-700',
       completed: 'bg-green-100 text-green-700',
       archived: 'bg-yellow-100 text-yellow-700',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-700';
-  };
-
-  const getGenerationStatusLabel = (status) => {
-    const statuses = {
-      pending: '⏳ Ожидание генерации',
-      processing: '🔄 Генерация...',
-      ready: '✅ Готово',
-      failed: '❌ Ошибка генерации',
-    };
-    return statuses[status] || status;
-  };
-
-  const getGenerationStatusColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-700',
-      processing: 'bg-blue-100 text-blue-700 animate-pulse',
-      ready: 'bg-green-100 text-green-700',
-      failed: 'bg-red-100 text-red-700',
     };
     return colors[status] || 'bg-gray-100 text-gray-700';
   };
@@ -289,6 +299,9 @@ export const ManagerPlanDetail = () => {
     );
   }
 
+  const planData = plan.plan || plan;
+  const isArchived = planData.status === 'archived';
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -333,7 +346,7 @@ export const ManagerPlanDetail = () => {
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || isArchived}
                   className="btn btn-primary disabled:opacity-50"
                 >
                   {loading ? 'Сохранение...' : 'Сохранить'}
@@ -346,38 +359,46 @@ export const ManagerPlanDetail = () => {
                   Отмена
                 </button>
               </div>
+              {isArchived && (
+                <p className="text-sm text-yellow-600">Архивированный план нельзя редактировать</p>
+              )}
             </form>
           ) : (
             <>
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">{plan.title}</h1>
-                  {plan.description && (
-                    <p className="text-gray-600 mb-4">{plan.description}</p>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">{planData.title}</h1>
+                  {planData.description && (
+                    <p className="text-gray-600 mb-4">{planData.description}</p>
                   )}
                   <div className="flex flex-wrap items-center gap-4 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(plan.status)}`}>
-                      Статус: {getStatusLabel(plan.status)}
-                    </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getGenerationStatusColor(plan.generation_status)}`}>
-                      Генерация: {getGenerationStatusLabel(plan.generation_status)}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(planData.status)}`}>
+                      Статус: {getStatusLabel(planData.status)}
                     </span>
                     <span className="text-gray-600">
-                      Прогресс: {plan.progress || 0}%
+                      Прогресс: {planData.progress || 0}%
                     </span>
                     <span className="text-gray-500">
-                      Создан: {formatDate(plan.created_at)}
+                      Создан: {formatDate(planData.created_at)}
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4 flex-shrink-0">
-                  {plan.generation_status === 'ready' && (
-                    <button
-                      onClick={startEditingPlan}
-                      className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded"
-                    >
-                      Редактировать
-                    </button>
+                <div className="flex flex-wrap gap-2 ml-4 flex-shrink-0">
+                  {!isArchived && (
+                    <>
+                      <button
+                        onClick={startEditingPlan}
+                        className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded"
+                      >
+                        Редактировать
+                      </button>
+                      <button
+                        onClick={handleArchivePlan}
+                        className="px-3 py-1 text-sm text-yellow-600 hover:text-yellow-800 bg-yellow-50 hover:bg-yellow-100 rounded"
+                      >
+                        Архивировать
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={handleDeletePlan}
@@ -387,35 +408,13 @@ export const ManagerPlanDetail = () => {
                   </button>
                 </div>
               </div>
-
-              {/* Индикатор генерации */}
-              {(plan.generation_status === 'pending' || plan.generation_status === 'processing') && (
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
-                    <span className="text-blue-700 text-sm">
-                      {plan.generation_status === 'pending' 
-                        ? 'План ожидает генерации...' 
-                        : 'План генерируется... Это может занять несколько минут.'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {plan.generation_status === 'failed' && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <span className="text-red-700 text-sm">
-                    ❌ Ошибка генерации плана. Попробуйте создать план заново.
-                  </span>
-                </div>
-              )}
             </>
           )}
         </div>
 
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Задачи</h2>
-          {plan.generation_status === 'ready' && (
+          {!isArchived && (
             <button
               onClick={() => setShowTaskForm(!showTaskForm)}
               className="btn btn-primary"
@@ -423,9 +422,12 @@ export const ManagerPlanDetail = () => {
               Добавить задачу
             </button>
           )}
+          {isArchived && (
+            <span className="text-sm text-yellow-600">Архивированный план (только просмотр)</span>
+          )}
         </div>
 
-        {showTaskForm && (
+        {!isArchived && showTaskForm && (
           <div className="card mb-4">
             <h3 className="font-semibold text-gray-900 mb-3">Новая задача</h3>
             <form onSubmit={handleCreateTask} className="space-y-4">
@@ -481,7 +483,7 @@ export const ManagerPlanDetail = () => {
                   key={task.id}
                   className="border rounded-lg p-4 hover:bg-gray-50"
                 >
-                  {editingTaskId === task.id ? (
+                  {editingTaskId === task.id && !isArchived ? (
                     <form onSubmit={handleUpdateTask} className="space-y-3">
                       <div>
                         <label className="label">Название</label>
@@ -535,31 +537,29 @@ export const ManagerPlanDetail = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2 ml-4 flex-shrink-0">
-                        <button
-                          onClick={() => startEditingTask(task)}
-                          className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded"
-                        >
-                          Редактировать
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTask(task.id)}
-                          className="px-3 py-1 text-sm text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded"
-                        >
-                          Удалить
-                        </button>
-                      </div>
+                      {!isArchived && (
+                        <div className="flex gap-2 ml-4 flex-shrink-0">
+                          <button
+                            onClick={() => startEditingTask(task)}
+                            className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded"
+                          >
+                            Редактировать
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTask(task.id)}
+                            className="px-3 py-1 text-sm text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded"
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">
-              {plan.generation_status === 'pending' || plan.generation_status === 'processing' 
-                ? 'Задачи генерируются...' 
-                : 'Задачи отсутствуют'}
-            </p>
+            <p className="text-gray-500 text-center py-8">Задачи отсутствуют</p>
           )}
         </div>
       </div>

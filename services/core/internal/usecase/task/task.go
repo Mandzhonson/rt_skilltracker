@@ -18,6 +18,7 @@ var (
 	ErrEmployeeForbidden = errors.New("employee has no access")
 	ErrInvalidUpdate     = errors.New("nothing to update")
 	ErrInvalidStatus     = errors.New("invalid task status")
+	ErrPlanArchived      = errors.New("plan is archived")
 )
 
 type PlanCompletionService interface {

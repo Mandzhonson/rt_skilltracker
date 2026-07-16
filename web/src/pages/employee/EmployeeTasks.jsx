@@ -41,6 +41,9 @@ export const EmployeeTasks = () => {
       const allTasks = [];
       plans.forEach((plan) => {
         const planData = plan.plan || plan;
+        // Пропускаем архивированные планы
+        if (planData.status === 'archived') return;
+        
         const tasksData = planData.tasks || plan.tasks || [];
         
         tasksData.forEach((task) => {
@@ -48,6 +51,7 @@ export const EmployeeTasks = () => {
             ...task,
             plan_title: planData.title || 'Без названия',
             plan_id: planData.id || plan.id,
+            plan_status: planData.status,
           });
         });
       });
@@ -140,6 +144,18 @@ export const EmployeeTasks = () => {
 
     const activeTask = tasks.find((t) => t.id === active.id);
     if (!activeTask) return;
+
+    if (activeTask.status === 'done') {
+      setMessage('Нельзя перемещать выполненные задачи');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    if (activeTask.title === 'Пройти тестирование') {
+      setMessage('Для завершения этой задачи необходимо пройти тестирование');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
 
     let newStatus = null;
 

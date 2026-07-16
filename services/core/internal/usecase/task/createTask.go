@@ -35,6 +35,10 @@ func (s *TaskService) Create(ctx context.Context, input CreateTaskInput) (uuid.U
 		return uuid.Nil, ErrManagerForbidden
 	}
 
+	if planEntity.Status == domain.PlanArchived {
+		return uuid.Nil, ErrPlanArchived
+	}
+	
 	position, err := s.taskRepo.GetNextPosition(
 		ctx,
 		input.PlanID,

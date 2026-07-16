@@ -73,6 +73,9 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		case errors.Is(err, task.ErrManagerForbidden):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 
+		case errors.Is(err, task.ErrPlanArchived):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		}

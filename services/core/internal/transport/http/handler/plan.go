@@ -24,6 +24,7 @@ type PlanService interface {
 	GetByIDWithTasks(ctx context.Context, managerID uuid.UUID, id uuid.UUID) (*domain.PlanWithTasks, error)
 	Update(ctx context.Context, input plan.UpdatePlanInput) error
 	Delete(ctx context.Context, managerID uuid.UUID, planID uuid.UUID) error
+	Archive(ctx context.Context, managerID, planID uuid.UUID) error
 }
 
 type PlanHandler struct {
@@ -397,4 +398,33 @@ func (h *PlanHandler) CreateAI(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, dto.CreateAIPlanResponse{ID: id.String()})
+}
+
+func (h *PlanHandler) Archive(c *gin.Context) {
+	managerID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	planID, err := uuid.Parse(c.Param("plan_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid plan id"})
+		return
+	}
+
+	err = h.service.Archive(c.Request.Context(), managerID, planID)
+	if err != nil {
+		switch {
+		case errors.Is(err, plan.ErrPlanNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, plan.ErrManagerForbidden):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+
+	c.Status(http.StatusOK)
 }

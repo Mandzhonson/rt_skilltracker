@@ -530,3 +530,25 @@ func (r *planRepository) UpdateAIContent(ctx context.Context, planID uuid.UUID, 
 
 	return err
 }
+
+func (r *planRepository) Archive(ctx context.Context, planID uuid.UUID) error {
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx, `
+		UPDATE plans
+		SET
+			status='archived',
+			updated_at=NOW()
+		WHERE id=$1
+	`, planID)
+
+	if err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}

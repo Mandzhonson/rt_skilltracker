@@ -45,6 +45,7 @@ type PlanRepository interface {
 	Delete(ctx context.Context, planID uuid.UUID) error
 	UpdateGenerationStatus(ctx context.Context, planID uuid.UUID, status domain.GenerationStatus) error
 	UpdateAIContent(ctx context.Context, planID uuid.UUID, title string, description *string) error
+	Archive(ctx context.Context, planID uuid.UUID) error
 }
 
 type TaskRepository interface {

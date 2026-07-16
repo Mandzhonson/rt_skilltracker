@@ -14,6 +14,7 @@ export const ManagerPlans = () => {
   const [employees, setEmployees] = useState([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [formData, setFormData] = useState({
     employee_id: '',
     title: '',
@@ -27,12 +28,15 @@ export const ManagerPlans = () => {
   }, []);
 
   useEffect(() => {
+    let filtered = plans;
     if (selectedEmployeeId) {
-      setFilteredPlans(plans.filter(p => p.employee_id === selectedEmployeeId));
-    } else {
-      setFilteredPlans(plans);
+      filtered = filtered.filter(p => p.employee_id === selectedEmployeeId);
     }
-  }, [selectedEmployeeId, plans]);
+    if (statusFilter) {
+      filtered = filtered.filter(p => p.status === statusFilter);
+    }
+    setFilteredPlans(filtered);
+  }, [selectedEmployeeId, statusFilter, plans]);
 
   const loadPlans = async () => {
     setLoading(true);
@@ -318,7 +322,7 @@ export const ManagerPlans = () => {
           </div>
         )}
 
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
           <span className="text-sm text-gray-500">Фильтр:</span>
           <select
             value={selectedEmployeeId}
@@ -332,9 +336,24 @@ export const ManagerPlans = () => {
               </option>
             ))}
           </select>
-          {selectedEmployeeId && (
+          
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="input max-w-xs"
+          >
+            <option value="">Все статусы</option>
+            <option value="active">Активные</option>
+            <option value="completed">Завершенные</option>
+            <option value="archived">Архивированные</option>
+          </select>
+          
+          {(selectedEmployeeId || statusFilter) && (
             <button
-              onClick={() => setSelectedEmployeeId('')}
+              onClick={() => {
+                setSelectedEmployeeId('');
+                setStatusFilter('');
+              }}
               className="text-sm text-red-600 hover:text-red-800"
             >
               Сбросить
@@ -371,9 +390,11 @@ export const ManagerPlans = () => {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(plan.status)}`}>
                           {getStatusLabel(plan.status)}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getGenerationStatusColor(plan.generation_status)}`}>
-                          {getGenerationStatusLabel(plan.generation_status)}
-                        </span>
+                        {plan.generation_status && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getGenerationStatusColor(plan.generation_status)}`}>
+                            {getGenerationStatusLabel(plan.generation_status)}
+                          </span>
+                        )}
                         <span className="text-gray-600">
                           Прогресс: {plan.progress || 0}%
                         </span>

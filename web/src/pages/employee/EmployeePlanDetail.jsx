@@ -20,6 +20,7 @@ export const EmployeePlanDetail = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [generationMessage, setGenerationMessage] = useState('');
   const [isGenerationComplete, setIsGenerationComplete] = useState(false);
+  const [isArchived, setIsArchived] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -41,6 +42,17 @@ export const EmployeePlanDetail = () => {
     try {
       const response = await employeeAPI.getPlan(planId);
       const planData = response.data;
+      
+      // Проверяем, архивирован ли план
+      if (planData.status === 'archived') {
+        setIsArchived(true);
+        setPlan(planData);
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
+      
+      setIsArchived(false);
       setPlan(planData);
       const tasksData = planData.tasks || planData.plan?.tasks || [];
       setTasks(tasksData);
@@ -52,7 +64,7 @@ export const EmployeePlanDetail = () => {
   };
 
   const handleUpdateStatus = async (taskId, newStatus) => {
-    if (updatingTaskId === taskId) return;
+    if (updatingTaskId === taskId || isArchived) return;
     
     setUpdatingTaskId(taskId);
     setError('');
@@ -124,7 +136,7 @@ export const EmployeePlanDetail = () => {
   const handleDragEnd = async ({ active, over }) => {
     setActiveId(null);
 
-    if (!over) return;
+    if (!over || isArchived) return;
 
     const activeTask = tasks.find((t) => t.id === active.id);
     if (!activeTask) return;
@@ -236,6 +248,35 @@ export const EmployeePlanDetail = () => {
           <button onClick={() => navigate('/employee')} className="btn btn-primary mt-4">
             Вернуться к планам
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isArchived) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <button
+            onClick={() => navigate('/employee')}
+            className="text-blue-600 hover:text-blue-800 mb-4 inline-block"
+          >
+            ← Назад к планам
+          </button>
+          <div className="card">
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📦</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">План архивирован</h2>
+              <p className="text-gray-500">Этот план был архивирован менеджером и недоступен для просмотра</p>
+              <button
+                onClick={() => navigate('/employee')}
+                className="btn btn-primary mt-4"
+              >
+                Вернуться к планам
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

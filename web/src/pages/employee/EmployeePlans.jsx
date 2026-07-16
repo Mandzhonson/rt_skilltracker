@@ -18,8 +18,13 @@ export const EmployeePlans = () => {
     setError('');
     try {
       const response = await employeeAPI.listPlans();
-      console.log('Plans response:', response.data); // Для отладки
-      setPlans(response.data || []);
+      const plansData = response.data || [];
+      // Фильтруем архивированные планы
+      const activePlans = plansData.filter(plan => {
+        const planData = plan.plan || plan;
+        return planData.status !== 'archived';
+      });
+      setPlans(activePlans);
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка загрузки планов');
     } finally {
@@ -90,7 +95,6 @@ export const EmployeePlans = () => {
           ) : (
             <div className="space-y-4">
               {plans.map((plan) => {
-                // Проверяем структуру данных - план может быть в plan поле или напрямую
                 const planData = plan.plan || plan;
                 const planId = planData.id || plan.id;
                 
@@ -99,7 +103,6 @@ export const EmployeePlans = () => {
                     key={planId}
                     className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                     onClick={() => {
-                      console.log('Navigating to plan:', planId); // Для отладки
                       if (planId) {
                         navigate(`/employee/plans/${planId}`);
                       }

@@ -70,6 +70,7 @@ func NewRouter(
 				plans.POST("/ai", planHandler.CreateAI)
 				plans.GET("/:plan_id", planHandler.GetByID)
 				plans.DELETE("/:plan_id", planHandler.Delete)
+				plans.PATCH("/:plan_id/archive", planHandler.Archive)
 				plans.PATCH("/:plan_id", planHandler.Update)
 				plans.POST("/:plan_id/tasks", taskHandler.Create)
 			}
