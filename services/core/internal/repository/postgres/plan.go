@@ -552,3 +552,60 @@ func (r *planRepository) Archive(ctx context.Context, planID uuid.UUID) error {
 	}
 	return tx.Commit(ctx)
 }
+
+func (r *planRepository) ListAllByEmployeeID(ctx context.Context, employeeID uuid.UUID) ([]*domain.Plan, error) {
+	query := `
+	SELECT
+		id,
+		employee_id,
+		created_by,
+		title,
+		description,
+		generation_status,
+		creation_type,
+		progress,
+		status,
+		created_at,
+		updated_at
+	FROM plans
+	WHERE employee_id = $1
+	ORDER BY created_at DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query, employeeID)
+	if err != nil {
+		return nil, fmt.Errorf("repository.ListAllByEmployeeID(plan): %w", err)
+	}
+	defer rows.Close()
+
+	plans := make([]*domain.Plan, 0)
+
+	for rows.Next() {
+		var m model.PlanModel
+
+		err := rows.Scan(
+			&m.ID,
+			&m.EmployeeID,
+			&m.CreatedBy,
+			&m.Title,
+			&m.Description,
+			&m.GenerationStatus,
+			&m.CreationType,
+			&m.Progress,
+			&m.Status,
+			&m.CreatedAt,
+			&m.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("repository.ListAllByEmployeeID(plan): %w", err)
+		}
+
+		plans = append(plans, converter.ToPlanEntity(&m))
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("repository.ListAllByEmployeeID(plan): %w", err)
+	}
+
+	return plans, nil
+}

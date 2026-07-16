@@ -2,6 +2,8 @@ import apiClient from '../utils/apiClient.js';
 
 export const managerAPI = {
   getEmployees: () => apiClient.get('/manager/employees'),
+  getEmployeeProfile: (employeeId) => apiClient.get(`/manager/employees/${employeeId}/profile`),
+  getEmployeeAvatar: (employeeId) => apiClient.get(`/manager/employees/${employeeId}/avatar`, { responseType: 'blob' }),
   listPlans: (params) => apiClient.get('/manager/plans', { params }),
   createPlan: (data) => apiClient.post('/manager/plans', data),
   createAIPlan: (data) => apiClient.post('/manager/plans/ai', data),

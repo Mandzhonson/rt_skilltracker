@@ -46,6 +46,7 @@ type PlanRepository interface {
 	UpdateGenerationStatus(ctx context.Context, planID uuid.UUID, status domain.GenerationStatus) error
 	UpdateAIContent(ctx context.Context, planID uuid.UUID, title string, description *string) error
 	Archive(ctx context.Context, planID uuid.UUID) error
+	ListAllByEmployeeID(ctx context.Context, employeeID uuid.UUID) ([]*domain.Plan, error)
 }
 
 type TaskRepository interface {

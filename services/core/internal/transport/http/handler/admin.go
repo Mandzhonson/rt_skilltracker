@@ -6,6 +6,7 @@ import (
 	"core_service/internal/transport/http/dto"
 	"core_service/internal/transport/http/middleware"
 	"core_service/internal/usecase/admin"
+	"core_service/internal/usecase/task"
 	"core_service/internal/usecase/user"
 	"errors"
 	"io"
@@ -25,6 +26,8 @@ type AdminService interface {
 	ListEmployeesByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.User, error)
 	GetUserAvatar(ctx context.Context, userID uuid.UUID) (io.ReadCloser, string, error)
 	UpdatePosition(ctx context.Context, userID uuid.UUID, position string) error
+	GetEmployeeProfileForAdmin(ctx context.Context, employeeID uuid.UUID) (*domain.EmployeeProfile, error)
+	AdminGetPlan(ctx context.Context, planID uuid.UUID) (*domain.PlanWithTasks, error)
 }
 
 type AdminHandler struct {
@@ -339,4 +342,119 @@ func (h *AdminHandler) UpdatePosition(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
+}
+
+func (h *AdminHandler) GetEmployeeProfile(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+
+	profile, err := h.service.GetEmployeeProfileForAdmin(
+		c.Request.Context(),
+		id,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+
+		case errors.Is(err, admin.ErrInvalidEmployee):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+
+	plans := make([]dto.PlanResponse, 0, len(profile.Plans))
+	for _, p := range profile.Plans {
+		plans = append(plans, dto.PlanResponse{
+			ID:               p.ID.String(),
+			EmployeeID:       p.EmployeeID.String(),
+			CreatedBy:        p.CreatedBy.String(),
+			Title:            p.Title,
+			Description:      p.Description,
+			GenerationStatus: string(p.GenerationStatus),
+			CreationType:     string(p.CreationType),
+			Progress:         p.Progress,
+			Status:           string(p.Status),
+			CreatedAt:        p.CreatedAt,
+			UpdatedAt:        p.UpdatedAt,
+		})
+	}
+
+	skills := make([]dto.SkillResponse, 0, len(profile.Skills))
+	for _, s := range profile.Skills {
+		skills = append(skills, dto.SkillResponse{
+			ID:          s.ID.String(),
+			Name:        s.Name,
+			Category:    s.Category,
+			Description: s.Description,
+		})
+	}
+
+	c.JSON(http.StatusOK, dto.EmployeeProfileResponse{
+		User: dto.UserResponse{
+			ID:        profile.User.ID.String(),
+			Email:     profile.User.Email,
+			FirstName: profile.User.FirstName,
+			LastName:  profile.User.LastName,
+			Role:      string(profile.User.Role),
+			Position:  profile.User.Position,
+		},
+		Skills: skills,
+		Plans:  plans,
+	})
+}
+
+func (h *AdminHandler) GetPlan(c *gin.Context) {
+	planID, err := uuid.Parse(c.Param("plan_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid plan id"})
+		return
+	}
+
+	plan, err := h.service.AdminGetPlan(c.Request.Context(), planID)
+	if err != nil {
+		switch {
+		case errors.Is(err, task.ErrPlanNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+
+	tasks := make([]dto.TaskResponse, 0, len(plan.Tasks))
+	for _, task := range plan.Tasks {
+		tasks = append(tasks, dto.TaskResponse{
+			ID:          task.ID.String(),
+			Title:       task.Title,
+			Description: task.Description,
+			Position:    task.Position,
+			Status:      string(task.Status),
+			CreatedAt:   task.CreatedAt,
+			UpdatedAt:   task.UpdatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, dto.PlanWithTasksResponse{
+		Plan: dto.PlanResponse{
+			ID:               plan.Plan.ID.String(),
+			EmployeeID:       plan.Plan.EmployeeID.String(),
+			CreatedBy:        plan.Plan.CreatedBy.String(),
+			Title:            plan.Plan.Title,
+			Description:      plan.Plan.Description,
+			GenerationStatus: string(plan.Plan.GenerationStatus),
+			CreationType:     string(plan.Plan.CreationType),
+			Progress:         plan.Plan.Progress,
+			Status:           string(plan.Plan.Status),
+			CreatedAt:        plan.Plan.CreatedAt,
+			UpdatedAt:        plan.Plan.UpdatedAt,
+		},
+		Tasks: tasks,
+	})
 }

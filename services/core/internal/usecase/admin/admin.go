@@ -6,16 +6,23 @@ import (
 	"errors"
 )
 
-var ErrInvalidPosition = errors.New("invalid position")
+var (
+	ErrInvalidPosition = errors.New("invalid position")
+	ErrInvalidEmployee = errors.New("user is not employee")
+)
 
 type adminService struct {
-	userRepo postgres.UserRepository
-	storage  minio.Storage
+	userRepo  postgres.UserRepository
+	planRepo  postgres.PlanRepository
+	skillRepo postgres.SkillRepository
+	storage   minio.Storage
 }
 
-func NewAdminService(userRepo postgres.UserRepository, storage minio.Storage) *adminService {
+func NewAdminService(userRepo postgres.UserRepository, planRepo postgres.PlanRepository, skillRepo postgres.SkillRepository, storage minio.Storage) *adminService {
 	return &adminService{
-		userRepo: userRepo,
-		storage:  storage,
+		userRepo:  userRepo,
+		planRepo:  planRepo,
+		skillRepo: skillRepo,
+		storage:   storage,
 	}
 }

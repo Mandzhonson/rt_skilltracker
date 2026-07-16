@@ -52,18 +52,21 @@ func NewRouter(
 			admin.Use(adminMiddleware)
 			admin.GET("/users", adminHandler.ListUsers)
 			admin.GET("/users/:id", adminHandler.GetUser)
+			admin.GET("/users/:id/profile", adminHandler.GetEmployeeProfile)
 			admin.PATCH("/users/:id/position", adminHandler.UpdatePosition)
 			admin.GET("/users/:id/avatar", adminHandler.GetUserAvatar)
+			admin.GET("/plans/:plan_id", adminHandler.GetPlan)
 			admin.PATCH("/users/:id/role", adminHandler.UpdateRole)
 			admin.PATCH("/users/:id/manager", adminHandler.AssignManager)
 			admin.DELETE("/users/:id/manager", adminHandler.RemoveManager)
 			admin.GET("/managers/:id/employees", adminHandler.ListEmployeesByManager)
-
 		}
 		manager := authorized.Group("/manager")
 		{
 			manager.Use(managerMiddleware)
 			manager.GET("/employees", userHandler.GetEmployeesByManager)
+			manager.GET("/employees/:employee_id/profile", userHandler.GetEmployeeProfile)
+			manager.GET("/employees/:employee_id/avatar", userHandler.GetEmployeeAvatar)
 			plans := manager.Group("/plans")
 			{
 				plans.GET("", planHandler.ListByManager)

@@ -24,6 +24,8 @@ type UserService interface {
 	DeleteAvatar(ctx context.Context, userID uuid.UUID) error
 	CreateAdmin(ctx context.Context, input user.CreateUserInput) error
 	GetEmployeesByManager(ctx context.Context, managerID uuid.UUID) ([]*domain.User, error)
+	GetEmployeeProfile(ctx context.Context, managerID uuid.UUID, employeeID uuid.UUID) (*user.EmployeeProfile, error)
+	GetEmployeeAvatar(ctx context.Context, employeeID uuid.UUID, managerID uuid.UUID) (io.ReadCloser, string, error)
 }
 
 type UserHandler struct {
@@ -40,9 +42,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req dto.RegisterRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
@@ -59,46 +59,33 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		switch {
 
 		case errors.Is(err, user.ErrUserAlreadyExists):
-			c.JSON(http.StatusConflict, gin.H{
-				"error": err.Error(),
-			})
-
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		case errors.Is(err, user.ErrInvalidEmail),
 			errors.Is(err, user.ErrInvalidPassword),
 			errors.Is(err, user.ErrInvalidName):
 
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		}
 
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.RegisterResponse{
-		ID: id.String(),
-	})
+	c.JSON(http.StatusCreated, dto.RegisterResponse{ID: id.String()})
 }
 
 func (h *UserHandler) GetProfile(c *gin.Context) {
 	claims, ok := middleware.GetClaims(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	userID, err := uuid.Parse(claims.Subject)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "invalid token",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
 	}
 
@@ -126,18 +113,14 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	var req dto.UpdateProfileRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
@@ -151,9 +134,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		},
 	)
 	if err != nil {
-
 		switch {
-
 		case errors.Is(err, user.ErrInvalidEmail),
 			errors.Is(err, user.ErrInvalidName):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -208,17 +189,13 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 func (h *UserHandler) SetAvatar(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	file, header, err := c.Request.FormFile("avatar")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "file is required",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
 		return
 	}
 	defer file.Close()
@@ -236,19 +213,13 @@ func (h *UserHandler) SetAvatar(c *gin.Context) {
 		case errors.Is(err, user.ErrAvatarTooLarge),
 			errors.Is(err, user.ErrInvalidAvatarFormat):
 
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		case errors.Is(err, user.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		}
 		return
 	}
@@ -259,9 +230,7 @@ func (h *UserHandler) SetAvatar(c *gin.Context) {
 func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -272,14 +241,10 @@ func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 			c.Status(http.StatusNoContent)
 
 		case errors.Is(err, user.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		}
 		return
 	}
@@ -290,9 +255,7 @@ func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 func (h *UserHandler) GetAvatar(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -300,17 +263,11 @@ func (h *UserHandler) GetAvatar(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrAvatarNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		case errors.Is(err, user.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		}
 		return
 	}
@@ -357,4 +314,118 @@ func (h *UserHandler) GetEmployeesByManager(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func (h *UserHandler) GetEmployeeProfile(c *gin.Context) {
+
+	managerID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	employeeID, err := uuid.Parse(c.Param("employee_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee id"})
+		return
+	}
+
+	profile, err := h.service.GetEmployeeProfile(c.Request.Context(), managerID, employeeID)
+	if err != nil {
+
+		switch {
+
+		case errors.Is(err, user.ErrForbidden):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+
+		case errors.Is(err, user.ErrNotManager):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"error": "internal server error"})
+		}
+
+		return
+	}
+
+	skills := make([]dto.SkillResponse, 0, len(profile.Skills))
+
+	for _, skill := range profile.Skills {
+		skills = append(skills, dto.SkillResponse{
+			ID:          skill.ID.String(),
+			Name:        skill.Name,
+			Category:    skill.Category,
+			Description: skill.Description,
+			CreatedAt:   skill.CreatedAt,
+		})
+	}
+
+	plans := make([]dto.PlanResponse, 0, len(profile.Plans))
+
+	for _, plan := range profile.Plans {
+		plans = append(plans, dto.PlanResponse{
+			ID:               plan.ID.String(),
+			EmployeeID:       plan.EmployeeID.String(),
+			CreatedBy:        plan.CreatedBy.String(),
+			Title:            plan.Title,
+			Description:      plan.Description,
+			GenerationStatus: string(plan.GenerationStatus),
+			CreationType:     string(plan.CreationType),
+			Progress:         plan.Progress,
+			Status:           string(plan.Status),
+			CreatedAt:        plan.CreatedAt,
+			UpdatedAt:        plan.UpdatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK,
+		dto.EmployeeProfileResponse{
+			User: dto.UserResponse{
+				ID:        profile.User.ID.String(),
+				Email:     profile.User.Email,
+				FirstName: profile.User.FirstName,
+				LastName:  profile.User.LastName,
+				Position:  profile.User.Position,
+				Role:      string(profile.User.Role),
+			},
+			Skills: skills,
+			Plans:  plans,
+		})
+}
+
+func (h *UserHandler) GetEmployeeAvatar(c *gin.Context) {
+	managerID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	employeeID, err := uuid.Parse(c.Param("employee_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee id"})
+		return
+	}
+
+	reader, contentType, err := h.service.GetEmployeeAvatar(c.Request.Context(), employeeID, managerID)
+	if err != nil {
+		switch {
+		case errors.Is(err, user.ErrAvatarNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, user.ErrEmployeeNotAssigned):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case errors.Is(err, user.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+	defer reader.Close()
+
+	c.Header("Content-Type", contentType)
+	_, _ = io.Copy(c.Writer, reader)
 }

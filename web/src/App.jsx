@@ -7,9 +7,12 @@ import { Profile } from './pages/Profile.jsx';
 import { Unauthorized } from './pages/Unauthorized.jsx';
 import { AdminUsers } from './pages/admin/AdminUsers.jsx';
 import { AdminUserDetail } from './pages/admin/AdminUserDetail.jsx';
+import { AdminPlanDetail } from './pages/admin/AdminPlanDetail.jsx';
 import { AdminManagerEmployees } from './pages/admin/AdminManagerEmployees.jsx';
 import { ManagerPlans } from './pages/manager/ManagerPlans.jsx';
 import { ManagerPlanDetail } from './pages/manager/ManagerPlanDetail.jsx';
+import { ManagerEmployees } from './pages/manager/ManagerEmployees.jsx';
+import { ManagerEmployeeDetail } from './pages/manager/ManagerEmployeeDetail.jsx';
 import { CreatePlan } from './pages/manager/CreatePlan.jsx';
 import { CreateAIPlan } from './pages/manager/CreateAIPlan.jsx';
 import { EmployeePlans } from './pages/employee/EmployeePlans.jsx';
@@ -46,6 +49,12 @@ function App() {
             </ProtectedRoute>
           } />
           
+          <Route path="/admin/plans/:planId" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminPlanDetail />
+            </ProtectedRoute>
+          } />
+          
           <Route path="/admin/managers/:managerId/employees" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminManagerEmployees />
@@ -74,6 +83,18 @@ function App() {
           <Route path="/manager/plans" element={
             <ProtectedRoute allowedRoles={['manager', 'admin']}>
               <ManagerPlans />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/manager/employees" element={
+            <ProtectedRoute allowedRoles={['manager', 'admin']}>
+              <ManagerEmployees />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/manager/employees/:employeeId" element={
+            <ProtectedRoute allowedRoles={['manager', 'admin']}>
+              <ManagerEmployeeDetail />
             </ProtectedRoute>
           } />
           

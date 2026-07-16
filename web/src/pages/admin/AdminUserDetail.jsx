@@ -24,9 +24,15 @@ export const AdminUserDetail = () => {
   const [isEditingPosition, setIsEditingPosition] = useState(false);
   const [positionLoading, setPositionLoading] = useState(false);
 
+  // Состояния для навыков и планов
+  const [skills, setSkills] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
   useEffect(() => {
     loadUser();
     loadManagers();
+    loadUserProfile();
     
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -52,6 +58,20 @@ export const AdminUserDetail = () => {
       setError(err.response?.data?.error || 'Ошибка загрузки пользователя');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUserProfile = async () => {
+    setLoadingProfile(true);
+    try {
+      const response = await adminAPI.getUserProfile(id);
+      const data = response.data;
+      setSkills(data.skills || []);
+      setPlans(data.plans || []);
+    } catch (err) {
+      console.error('Error loading user profile:', err);
+    } finally {
+      setLoadingProfile(false);
     }
   };
 
@@ -124,7 +144,6 @@ export const AdminUserDetail = () => {
     }
   };
 
-  // Обработчик обновления должности
   const handleUpdatePosition = async (e) => {
     e.preventDefault();
     setPositionLoading(true);
@@ -162,6 +181,77 @@ export const AdminUserDetail = () => {
       return `${manager.first_name} ${manager.last_name}`;
     }
     return managerId;
+  };
+
+  const getStatusLabel = (status) => {
+    const statuses = {
+      draft: 'Черновик',
+      active: 'Активный',
+      completed: 'Завершен',
+      archived: 'Архивный',
+    };
+    return statuses[status] || status;
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      draft: 'bg-gray-100 text-gray-600',
+      active: 'bg-blue-100 text-blue-700',
+      completed: 'bg-green-100 text-green-700',
+      archived: 'bg-yellow-100 text-yellow-700',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-600';
+  };
+
+  const getCategoryLabel = (category) => {
+    const labels = {
+      frontend: 'Фронтенд',
+      backend: 'Бэкенд',
+      devops: 'DevOps',
+      database: 'Базы данных',
+      testing: 'Тестирование',
+      cloud: 'Облачные технологии',
+      mobile: 'Мобильная разработка',
+      architecture: 'Архитектура',
+      ai: 'ИИ и ML',
+      security: 'Безопасность',
+      soft_skills: 'Soft Skills',
+      other: 'Другое',
+    };
+    return labels[category] || category;
+  };
+
+  const getCategoryColor = (category) => {
+    const colors = {
+      frontend: 'bg-blue-100 text-blue-700',
+      backend: 'bg-emerald-100 text-emerald-700',
+      devops: 'bg-purple-100 text-purple-700',
+      database: 'bg-amber-100 text-amber-700',
+      testing: 'bg-rose-100 text-rose-700',
+      cloud: 'bg-indigo-100 text-indigo-700',
+      mobile: 'bg-pink-100 text-pink-700',
+      architecture: 'bg-orange-100 text-orange-700',
+      ai: 'bg-cyan-100 text-cyan-700',
+      security: 'bg-red-100 text-red-700',
+      soft_skills: 'bg-teal-100 text-teal-700',
+      other: 'bg-gray-100 text-gray-700',
+    };
+    return colors[category] || colors.other;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '—';
+      return date.toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return '—';
+    }
   };
 
   if (loading) {
@@ -213,7 +303,7 @@ export const AdminUserDetail = () => {
           ← Назад к списку
         </button>
 
-        <div className="card">
+        <div className="card mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Детали пользователя</h1>
 
           {message && (
@@ -268,7 +358,6 @@ export const AdminUserDetail = () => {
               </span>
             </div>
 
-            {/* Блок Должность */}
             <div>
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-medium text-gray-500">Должность</label>
@@ -327,12 +416,12 @@ export const AdminUserDetail = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-500">Дата создания</label>
-              <p className="text-gray-900">{new Date(user.created_at).toLocaleString()}</p>
+              <p className="text-gray-900">{formatDate(user.created_at)}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-500">Дата обновления</label>
-              <p className="text-gray-900">{new Date(user.updated_at).toLocaleString()}</p>
+              <p className="text-gray-900">{formatDate(user.updated_at)}</p>
             </div>
 
             <div className="pt-4 border-t">
@@ -383,6 +472,92 @@ export const AdminUserDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Навыки — переделаны на список в один столбец со скроллом */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-xl font-semibold text-gray-900">Навыки</h2>
+            {skills.length > 0 && (
+              <span className="text-sm text-gray-400">{skills.length} навыков</span>
+            )}
+          </div>
+          
+          {skills.length === 0 ? (
+            <div className="card text-center py-4 border-card">
+              <p className="text-gray-500">Нет навыков</p>
+            </div>
+          ) : (
+            <div className="scroll-container">
+              <div className="skills-column-container">
+                {skills.map((skill) => (
+                  <div
+                    key={skill.id}
+                    className="skill-list-item hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <div className="flex justify-between items-center gap-4">
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{skill.name}</p>
+                        {skill.description && (
+                          <p className="text-xs text-gray-500 mt-1">{skill.description}</p>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2 flex-wrap shrink-0">
+                        {skill.category && (
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${getCategoryColor(skill.category)}`}>
+                            {getCategoryLabel(skill.category)}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400">
+                          {formatDate(skill.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Планы */}
+        {plans.length > 0 && (
+          <div className="card">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Планы</h2>
+            <div className="space-y-3">
+              {plans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">{plan.title}</h3>
+                      {plan.description && (
+                        <p className="text-sm text-gray-500 mt-1">{plan.description}</p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(plan.status)}`}>
+                          {getStatusLabel(plan.status)}
+                        </span>
+                        <span className="text-gray-500">Прогресс: {plan.progress || 0}%</span>
+                        <span className="text-gray-400 text-xs">
+                          {formatDate(plan.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/admin/plans/${plan.id}`)}
+                      className="btn btn-primary text-sm"
+                    >
+                      Открыть
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

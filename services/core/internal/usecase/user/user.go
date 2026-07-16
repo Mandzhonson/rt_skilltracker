@@ -21,17 +21,23 @@ var (
 	ErrAvatarTooLarge      = errors.New("avatar is too large")
 	ErrAvatarNotFound      = errors.New("avatar is not found")
 	ErrNotManager          = errors.New("user is not a manager")
+	ErrForbidden           = errors.New("forbidden")
+	ErrEmployeeNotAssigned = errors.New("employee is not assigned to manager")
 )
 
 type userService struct {
-	userRepo postgres.UserRepository
-	storage  minio.Storage
+	userRepo  postgres.UserRepository
+	skillRepo postgres.SkillRepository
+	planRepo  postgres.PlanRepository
+	storage   minio.Storage
 }
 
-func NewUserService(userRepository postgres.UserRepository, storage minio.Storage) *userService {
+func NewUserService(userRepository postgres.UserRepository, storage minio.Storage, skillRepo postgres.SkillRepository, planRepo postgres.PlanRepository) *userService {
 	return &userService{
-		userRepo: userRepository,
-		storage:  storage,
+		userRepo:  userRepository,
+		storage:   storage,
+		skillRepo: skillRepo,
+		planRepo:  planRepo,
 	}
 }
 func isValidEmail(email string) bool {

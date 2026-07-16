@@ -29,3 +29,9 @@ type CreateUserInput struct {
 	Role      domain.Role
 	Position  string
 }
+
+type EmployeeProfile struct {
+	User   *domain.User
+	Skills []*domain.Skill
+	Plans  []*domain.Plan
+}
