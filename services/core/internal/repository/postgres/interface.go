@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockgen -source=interface.go -destination=mocks/mock_repository.go -package=mocks
+
 type AuthRepository interface {
 	SaveRefreshToken(ctx context.Context, e domain.RefreshToken) error
 	GetRefreshToken(ctx context.Context, jti string) (*domain.RefreshToken, error)

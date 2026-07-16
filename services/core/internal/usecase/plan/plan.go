@@ -26,10 +26,10 @@ type planService struct {
 	taskRepo  postgres.TaskRepository
 	skillRepo postgres.SkillRepository
 	testRepo  postgres.TestRepository
-	aiService ai.AIService
+	aiService *ai.AiService
 }
 
-func NewPlanService(planRepo postgres.PlanRepository, userRepo postgres.UserRepository, taskRepo postgres.TaskRepository, skillRepo postgres.SkillRepository, testRepo postgres.TestRepository, aiService ai.AIService) *planService {
+func NewPlanService(planRepo postgres.PlanRepository, userRepo postgres.UserRepository, taskRepo postgres.TaskRepository, skillRepo postgres.SkillRepository, testRepo postgres.TestRepository, aiService *ai.AiService) *planService {
 	return &planService{
 		planRepo:  planRepo,
 		userRepo:  userRepo,

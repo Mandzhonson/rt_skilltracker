@@ -69,7 +69,7 @@ func (s *TaskService) UpdateStatus(ctx context.Context, input UpdateTaskStatusIn
 		go func(planID uuid.UUID) {
 			err := s.planCompletionService.GenerateSkillsIfCompleted(context.Background(), planID)
 			if err != nil {
-				// TODO: добавить slog.Error()
+
 			}
 		}(taskEntity.PlanID)
 	}

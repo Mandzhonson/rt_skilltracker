@@ -17,6 +17,7 @@ type Session struct {
 	TokenHash string
 }
 
+//go:generate mockgen -source=auth.go -destination=mocks/mock_redis.go -package=mocks
 type SessionRepository interface {
 	BlacklistAccessToken(ctx context.Context, jti string, ttl time.Duration) error
 	IsBlacklisted(ctx context.Context, jti string) (bool, error)

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (s *AIService) GeneratePlan(ctx context.Context, input GeneratePlanInput) (*GeneratedPlan, error) {
+func (s *AiService) GeneratePlan(ctx context.Context, input GeneratePlanInput) (*GeneratedPlan, error) {
 	if strings.TrimSpace(input.Topic) == "" {
 		return nil, ErrInvalidTopic
 	}

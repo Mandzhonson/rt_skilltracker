@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 )
 
-func (s *AIService) ExtractSkills(ctx context.Context, input ExtractSkillsInput) ([]SkillCandidate, error) {
+func (s *AiService) ExtractSkills(ctx context.Context, input ExtractSkillsInput) ([]SkillCandidate, error) {
 	prompt := buildSkillPrompt(input)
 	answer, err := s.client.Generate(ctx, prompt)
 	if err != nil {

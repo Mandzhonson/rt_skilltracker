@@ -8,7 +8,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 )
-
+//go:generate mockgen -source=storage.go -destination=mocks/mock_storage.go -package=mocks
 type Storage interface {
 	UploadAvatar(ctx context.Context, objectName string, file io.Reader, size int64, contentType string) (string, error)
 	DeleteAvatar(ctx context.Context, objectName string) error

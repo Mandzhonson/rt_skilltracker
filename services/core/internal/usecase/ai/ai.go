@@ -1,7 +1,7 @@
 package ai
 
 import (
-	"core_service/internal/clients/ollama"
+	"context"
 	"errors"
 )
 
@@ -11,12 +11,16 @@ var (
 	ErrInvalidAIResponse = errors.New("invalid ai response")
 )
 
-type AIService struct {
-	client *ollama.Client
+type AIClient interface {
+	Generate(ctx context.Context, prompt string) (string, error)
 }
 
-func NewAIService(client *ollama.Client) *AIService {
-	return &AIService{
+type AiService struct {
+	client AIClient
+}
+
+func NewAiService(client AIClient) *AiService {
+	return &AiService{
 		client: client,
 	}
 }
