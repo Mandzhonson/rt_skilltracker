@@ -129,7 +129,7 @@ export const ManagerPlanDetail = () => {
       await managerAPI.deletePlan(planId);
       setMessage('План успешно удален');
       setTimeout(() => {
-        navigate('/manager');
+        navigate('/manager/plans');
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка удаления плана');
@@ -174,7 +174,7 @@ export const ManagerPlanDetail = () => {
       await managerAPI.archivePlan(planId);
       setMessage('План успешно архивирован');
       setTimeout(() => {
-        navigate('/manager');
+        navigate('/manager/plans');
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка архивации плана');
@@ -475,7 +475,8 @@ export const ManagerPlanDetail = () => {
           </div>
         )}
 
-        <div className="card">
+        {/* Список задач */}
+        <div className="card mb-6">
           {tasks.length > 0 ? (
             <div className="space-y-4">
               {tasks.map((task) => (
@@ -561,6 +562,16 @@ export const ManagerPlanDetail = () => {
           ) : (
             <p className="text-gray-500 text-center py-8">Задачи отсутствуют</p>
           )}
+        </div>
+
+        {/* Вынесенная кнопка просмотра теста менеджера в самом конце страницы */}
+        <div className="flex justify-end">
+          <button
+            onClick={() => navigate(`/manager/plans/${planId}/test`)}
+            className="btn !bg-purple-600 hover:!bg-purple-700 !text-white font-medium px-6 py-2.5 shadow-sm transition-all"
+          >
+            Просмотр теста плана
+          </button>
         </div>
       </div>
     </div>

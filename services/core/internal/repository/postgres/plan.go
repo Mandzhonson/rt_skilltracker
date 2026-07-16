@@ -609,3 +609,26 @@ func (r *planRepository) ListAllByEmployeeID(ctx context.Context, employeeID uui
 
 	return plans, nil
 }
+
+func (r *planRepository) ManagerOwnsPlan(ctx context.Context, managerID uuid.UUID, planID uuid.UUID) (bool, error) {
+
+	var exists bool
+
+	query := `
+	SELECT EXISTS(
+		SELECT 1
+		FROM plans
+		WHERE id=$1
+		AND created_by=$2
+	)
+	`
+
+	err := r.pool.QueryRow(
+		ctx,
+		query,
+		planID,
+		managerID,
+	).Scan(&exists)
+
+	return exists, err
+}

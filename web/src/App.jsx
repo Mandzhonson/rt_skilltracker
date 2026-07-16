@@ -8,9 +8,11 @@ import { Unauthorized } from './pages/Unauthorized.jsx';
 import { AdminUsers } from './pages/admin/AdminUsers.jsx';
 import { AdminUserDetail } from './pages/admin/AdminUserDetail.jsx';
 import { AdminPlanDetail } from './pages/admin/AdminPlanDetail.jsx';
+import { AdminTestDetail } from './pages/admin/AdminTestDetail.jsx';
 import { AdminManagerEmployees } from './pages/admin/AdminManagerEmployees.jsx';
 import { ManagerPlans } from './pages/manager/ManagerPlans.jsx';
 import { ManagerPlanDetail } from './pages/manager/ManagerPlanDetail.jsx';
+import { ManagerTestDetail } from './pages/manager/ManagerTestDetail.jsx';
 import { ManagerEmployees } from './pages/manager/ManagerEmployees.jsx';
 import { ManagerEmployeeDetail } from './pages/manager/ManagerEmployeeDetail.jsx';
 import { CreatePlan } from './pages/manager/CreatePlan.jsx';
@@ -55,6 +57,12 @@ function App() {
             </ProtectedRoute>
           } />
           
+          <Route path="/admin/plans/:planId/test" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminTestDetail />
+            </ProtectedRoute>
+          } />
+          
           <Route path="/admin/managers/:managerId/employees" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminManagerEmployees />
@@ -77,6 +85,12 @@ function App() {
           <Route path="/manager/plans/:planId" element={
             <ProtectedRoute allowedRoles={['manager', 'admin']}>
               <ManagerPlanDetail />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/manager/plans/:planId/test" element={
+            <ProtectedRoute allowedRoles={['manager', 'admin']}>
+              <ManagerTestDetail />
             </ProtectedRoute>
           } />
           

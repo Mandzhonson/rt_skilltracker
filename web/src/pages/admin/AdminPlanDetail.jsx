@@ -21,8 +21,9 @@ export const AdminPlanDetail = () => {
     try {
       const response = await adminAPI.getPlan(planId);
       const data = response.data;
-      setPlan(data);
-      setTasks(data.tasks || []);
+      const planData = data.plan || data;
+      setPlan(planData);
+      setTasks(planData.tasks || data.tasks || []);
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка загрузки плана');
     } finally {
@@ -132,26 +133,30 @@ export const AdminPlanDetail = () => {
           ← Назад
         </button>
 
+        {/* Общая информация о плане */}
         <div className="card mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{plan.title}</h1>
-          {plan.description && (
-            <p className="text-gray-600 mb-4">{plan.description}</p>
-          )}
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(plan.status)}`}>
-              Статус: {getStatusLabel(plan.status)}
-            </span>
-            <span className="text-gray-600">
-              Прогресс: {plan.progress || 0}%
-            </span>
-            <span className="text-gray-500">
-              Создан: {formatDate(plan.created_at)}
-            </span>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">{plan.title}</h1>
+            {plan.description && (
+              <p className="text-gray-600 mb-4">{plan.description}</p>
+            )}
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(plan.status)}`}>
+                Статус: {getStatusLabel(plan.status)}
+              </span>
+              <span className="text-gray-600">
+                Прогресс: {plan.progress || 0}%
+              </span>
+              <span className="text-gray-500">
+                Создан: {formatDate(plan.created_at)}
+              </span>
+            </div>
           </div>
         </div>
 
+        {/* Список задач */}
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Задачи</h2>
-        <div className="card">
+        <div className="card mb-6">
           {tasks.length === 0 ? (
             <p className="text-gray-500 text-center py-4">Задачи отсутствуют</p>
           ) : (
@@ -161,7 +166,7 @@ export const AdminPlanDetail = () => {
                   key={task.id}
                   className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-center gap-4">
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{task.title}</h3>
                       {task.description && (
@@ -181,6 +186,16 @@ export const AdminPlanDetail = () => {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Вынесенная кнопка просмотра теста в самом конце */}
+        <div className="flex justify-end">
+          <button
+            onClick={() => navigate(`/admin/plans/${planId}/test`)}
+            className="btn !bg-purple-600 hover:!bg-purple-700 !text-white font-medium px-6 py-2.5 shadow-sm transition-all"
+          >
+            Просмотр теста плана
+          </button>
         </div>
       </div>
     </div>

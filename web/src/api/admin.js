@@ -13,4 +13,5 @@ export const adminAPI = {
   listPlansByEmployee: (employeeId) => apiClient.get(`/admin/users/${employeeId}/plans`),
   listManagers: () => apiClient.get('/admin/users', { params: { role: 'manager', limit: 100 } }),
   getPlan: (planId) => apiClient.get(`/admin/plans/${planId}`),
+  getTest: (planId) => apiClient.get(`/admin/plans/${planId}/test`),
 };

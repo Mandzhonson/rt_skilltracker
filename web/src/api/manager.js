@@ -11,6 +11,7 @@ export const managerAPI = {
   updatePlan: (planId, data) => apiClient.patch(`/manager/plans/${planId}`, data),
   deletePlan: (planId) => apiClient.delete(`/manager/plans/${planId}`),
   archivePlan: (planId) => apiClient.patch(`/manager/plans/${planId}/archive`),
+  getTest: (planId) => apiClient.get(`/manager/plans/${planId}/test`),
   createTask: (planId, data) => apiClient.post(`/manager/plans/${planId}/tasks`, data),
   getTask: (taskId) => apiClient.get(`/manager/tasks/${taskId}`),
   updateTask: (taskId, data) => apiClient.patch(`/manager/tasks/${taskId}`, data),
