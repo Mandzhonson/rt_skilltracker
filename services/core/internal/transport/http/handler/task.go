@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockgen -source=task.go -destination=mocks/mock_task_handler.go -package=mocks
 type TaskService interface {
 	Create(ctx context.Context, input task.CreateTaskInput) (uuid.UUID, error)
 	GetByID(ctx context.Context, managerID uuid.UUID, id uuid.UUID) (*domain.Task, error)
@@ -255,6 +256,8 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		case errors.Is(err, task.ErrManagerForbidden):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case errors.Is(err, task.ErrInvalidUpdate):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		}

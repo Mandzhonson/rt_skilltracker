@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockgen -source=test.go -destination=mocks/mock_test_handler.go -package=mocks
 type TestService interface {
 	GetForEmployee(ctx context.Context, userID uuid.UUID, planID uuid.UUID) (*domain.TestView, error)
 	Submit(ctx context.Context, input test.SubmitTestInput) (*domain.TestResult, error)

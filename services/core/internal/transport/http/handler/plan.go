@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockgen -source=plan.go -destination=mocks/mock_plan_handler.go -package=mocks
 type PlanService interface {
 	Create(ctx context.Context, input plan.CreatePlanInput) (uuid.UUID, error)
 	CreateAI(ctx context.Context, input plan.CreateAIInput) (uuid.UUID, error)

@@ -5,10 +5,12 @@ import (
 	"core_service/internal/transport/http/dto"
 	"core_service/internal/usecase/ai"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
+//go:generate mockgen -source=ai.go -destination=mocks/mock_ai_handler.go -package=mocks
 type AIService interface {
 	GeneratePlan(ctx context.Context, input ai.GeneratePlanInput) (*ai.GeneratedPlan, error)
 	ExtractSkills(ctx context.Context, input ai.ExtractSkillsInput) ([]ai.SkillCandidate, error)
@@ -45,6 +47,10 @@ func (h *AIHandler) GeneratePlan(c *gin.Context) {
 		return
 	}
 
+	if strings.TrimSpace(req.Topic) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "topic is required"})
+		return
+	}
 	plan, err := h.service.GeneratePlan(c.Request.Context(), ai.GeneratePlanInput{
 		Topic:       req.Topic,
 		Description: req.Description,

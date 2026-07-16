@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockgen -source=user.go -destination=mocks/mock_user_handler.go -package=mocks
 type UserService interface {
 	CreateUser(ctx context.Context, input user.CreateUserInput) (uuid.UUID, error)
 	GetProfile(ctx context.Context, userID uuid.UUID) (*domain.User, error)

@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockgen -source=skill.go -destination=mocks/mock_skill_handler.go -package=mocks
 type SkillService interface {
 	ListByUserID(ctx context.Context, requesterID, userID uuid.UUID) ([]*domain.Skill, error)
 }

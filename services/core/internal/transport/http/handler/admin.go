@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockgen -source=admin.go -destination=mocks/mock_admin_handler.go -package=mocks
 type AdminService interface {
 	ListUsers(ctx context.Context, input admin.ListUsersInput) ([]*domain.User, error)
 	GetUser(ctx context.Context, id uuid.UUID) (*domain.User, error)
