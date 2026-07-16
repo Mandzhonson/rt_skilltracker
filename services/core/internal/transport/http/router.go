@@ -13,6 +13,7 @@ func NewRouter(
 	planHandler *handler.PlanHandler,
 	taskHandler *handler.TaskHandler,
 	testHandler *handler.TestHandler,
+	skillHandler *handler.SkillHandler,
 	authMiddleware gin.HandlerFunc,
 	adminMiddleware gin.HandlerFunc,
 	managerMiddleware gin.HandlerFunc,
@@ -85,6 +86,10 @@ func NewRouter(
 		employee := authorized.Group("/employee")
 		{
 			employee.Use(employeeMiddleware)
+			skills := employee.Group("/skills")
+			{
+				skills.GET("", skillHandler.EmployeeList)
+			}
 			plans := employee.Group("/plans")
 			{
 				plans.GET("/:plan_id/test", testHandler.GetForEmployee)

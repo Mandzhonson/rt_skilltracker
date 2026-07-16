@@ -20,6 +20,7 @@ import (
 	"core_service/internal/usecase/ai"
 	"core_service/internal/usecase/auth"
 	"core_service/internal/usecase/plan"
+	"core_service/internal/usecase/skill"
 	"core_service/internal/usecase/task"
 	"core_service/internal/usecase/test"
 	"core_service/internal/usecase/user"
@@ -79,6 +80,7 @@ func Run() error {
 	planService := plan.NewPlanService(planRepository, userRepository, taskRepository, skillRepository, testRepository, *aiService)
 	taskService := task.NewTaskService(taskRepository, planRepository, planService)
 	testService := test.NewTestService(testRepository, *taskService, planRepository, planService)
+	skillService := skill.NewSkillService(skillRepository, userRepository)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
@@ -86,13 +88,14 @@ func Run() error {
 	planHandler := handler.NewPlanHandler(planService)
 	taskHandler := handler.NewTaskHandler(taskService)
 	testHandler := handler.NewTestHandler(testService)
+	skillHandler := handler.NewSkillHandler(skillService)
 
 	authMiddleware := middleware.AuthMiddleware(jwtService, sessionRepository)
 	adminMiddleware := middleware.AdminMiddleware()
 	managerMiddleware := middleware.ManagerMiddleware()
 	employeeMiddleware := middleware.EmployeeMiddleware()
 
-	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, testHandler, authMiddleware, adminMiddleware, managerMiddleware, employeeMiddleware)
+	router := router.NewRouter(authHandler, userHandler, adminHandler, planHandler, taskHandler, testHandler, skillHandler, authMiddleware, adminMiddleware, managerMiddleware, employeeMiddleware)
 
 	err = userService.CreateAdmin(
 		ctx,

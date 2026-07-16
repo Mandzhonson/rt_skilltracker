@@ -506,3 +506,22 @@
     padding-right: 2rem;
   }
 }
+
+.border-card {
+  border: 1px solid #000000 !important;
+}
+
+.card-padding {
+  padding: 1rem !important;
+}
+
+.item-spacing > * + * {
+  margin-top: 0.5rem !important;
+}
+
+.tags-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem !important;
+  padding-top: 0.5rem !important;
+}
