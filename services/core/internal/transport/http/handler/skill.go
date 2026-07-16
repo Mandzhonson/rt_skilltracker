@@ -27,6 +27,18 @@ func NewSkillHandler(s SkillService) *SkillHandler {
 	}
 }
 
+// EmployeeList godoc
+// @Summary Получить список навыков сотрудника
+// @Description Возвращает список навыков текущего сотрудника
+// @Tags Employee
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.ListSkillsResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /employee/skills [get]
 func (h *SkillHandler) EmployeeList(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {

@@ -37,6 +37,21 @@ func NewPlanHandler(planService PlanService) *PlanHandler {
 	}
 }
 
+// Create godoc
+// @Summary Создать план
+// @Description Создает новый план развития для сотрудника
+// @Tags Plans
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.CreatePlanRequest true "Данные для создания плана"
+// @Success 201 {object} dto.CreatePlanResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/plans [post]
 func (h *PlanHandler) Create(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -89,6 +104,21 @@ func (h *PlanHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.CreatePlanResponse{ID: id.String()})
 }
 
+// GetByID godoc
+// @Summary Получить план по ID
+// @Description Возвращает детальную информацию о плане с задачами
+// @Tags Plans
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Success 200 {object} dto.PlanWithTasksResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/plans/{plan_id} [get]
 func (h *PlanHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("plan_id"))
 	if err != nil {
@@ -148,6 +178,17 @@ func (h *PlanHandler) GetByID(c *gin.Context) {
 	})
 }
 
+// EmployeeGetPlans godoc
+// @Summary Получить список планов сотрудника
+// @Description Возвращает список планов текущего сотрудника
+// @Tags Employee
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} dto.PlanWithTasksResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /employee/plans [get]
 func (h *PlanHandler) EmployeeGetPlans(c *gin.Context) {
 	employeeID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -195,6 +236,21 @@ func (h *PlanHandler) EmployeeGetPlans(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// EmployeeGetPlan godoc
+// @Summary Получить план сотрудника по ID
+// @Description Возвращает детальную информацию о плане сотрудника
+// @Tags Employee
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Success 200 {object} dto.PlanWithTasksResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /employee/plans/{plan_id} [get]
 func (h *PlanHandler) EmployeeGetPlan(c *gin.Context) {
 	employeeID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -255,6 +311,17 @@ func (h *PlanHandler) EmployeeGetPlan(c *gin.Context) {
 	})
 }
 
+// ListByManager godoc
+// @Summary Получить список планов менеджера
+// @Description Возвращает список всех планов, созданных менеджером
+// @Tags Plans
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.ListPlansResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/plans [get]
 func (h *PlanHandler) ListByManager(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -290,6 +357,22 @@ func (h *PlanHandler) ListByManager(c *gin.Context) {
 	})
 }
 
+// Update godoc
+// @Summary Обновить план
+// @Description Обновляет название и описание плана
+// @Tags Plans
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Param request body dto.UpdatePlanRequest true "Данные для обновления"
+// @Success 200 "OK"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/plans/{plan_id} [patch]
 func (h *PlanHandler) Update(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -332,6 +415,21 @@ func (h *PlanHandler) Update(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// Delete godoc
+// @Summary Удалить план
+// @Description Удаляет план и все связанные задачи
+// @Tags Plans
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Success 204 "No Content"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/plans/{plan_id} [delete]
 func (h *PlanHandler) Delete(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -361,6 +459,20 @@ func (h *PlanHandler) Delete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// CreateAI godoc
+// @Summary Создать план с помощью ИИ
+// @Description Генерирует и создает план развития с помощью ИИ
+// @Tags Plans
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.CreateAIPlanRequest true "Данные для генерации плана"
+// @Success 201 {object} dto.CreateAIPlanResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/plans/ai [post]
 func (h *PlanHandler) CreateAI(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -400,6 +512,21 @@ func (h *PlanHandler) CreateAI(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.CreateAIPlanResponse{ID: id.String()})
 }
 
+// Archive godoc
+// @Summary Архивировать план
+// @Description Переводит план в статус archived
+// @Tags Plans
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Success 200 "OK"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/plans/{plan_id}/archive [patch]
 func (h *PlanHandler) Archive(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {

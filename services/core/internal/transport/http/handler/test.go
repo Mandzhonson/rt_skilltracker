@@ -30,6 +30,20 @@ func NewTestHandler(service TestService) *TestHandler {
 	}
 }
 
+// GetForEmployee godoc
+// @Summary Получить тест для сотрудника
+// @Description Возвращает тест для прохождения сотрудником
+// @Tags Employee
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Success 200 {object} dto.StartTestResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /employee/plans/{plan_id}/test [get]
 func (h *TestHandler) GetForEmployee(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -45,7 +59,12 @@ func (h *TestHandler) GetForEmployee(c *gin.Context) {
 
 	result, err := h.service.GetForEmployee(c.Request.Context(), userID, planID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		switch {
+		case errors.Is(err, test.ErrTestNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
 		return
 	}
 
@@ -63,6 +82,21 @@ func (h *TestHandler) GetForEmployee(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// Submit godoc
+// @Summary Отправить ответы на тест
+// @Description Отправляет ответы на тест и получает результат
+// @Tags Employee
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Param request body dto.SubmitTestRequest true "Ответы на тест"
+// @Success 200 {object} dto.SubmitTestResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /employee/plans/{plan_id}/test [post]
 func (h *TestHandler) Submit(c *gin.Context) {
 
 	userID, ok := middleware.GetUserID(c)
@@ -118,6 +152,20 @@ func (h *TestHandler) Submit(c *gin.Context) {
 	)
 }
 
+// ManagerGetTest godoc
+// @Summary Получить тест для менеджера
+// @Description Возвращает тест с ответами для просмотра менеджером
+// @Tags Manager
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Success 200 {object} dto.StartTestResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/plans/{plan_id}/test [get]
 func (h *TestHandler) ManagerGetTest(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -164,6 +212,20 @@ func (h *TestHandler) ManagerGetTest(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// AdminGetTest godoc
+// @Summary Получить тест для администратора
+// @Description Возвращает тест с ответами для просмотра администратором
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Success 200 {object} dto.StartTestResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/plans/{plan_id}/test [get]
 func (h *TestHandler) AdminGetTest(c *gin.Context) {
 
 	planID, err := uuid.Parse(c.Param("plan_id"))

@@ -24,6 +24,19 @@ func NewAIHandler(service AIService) *AIHandler {
 	}
 }
 
+// GeneratePlan godoc
+// @Summary Сгенерировать план с помощью ИИ
+// @Description Генерирует план обучения на основе темы и описания
+// @Tags AI
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.GeneratePlanRequest true "Данные для генерации плана"
+// @Success 200 {object} ai.GeneratedPlan
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /ai/generate-plan [post]
 func (h *AIHandler) GeneratePlan(c *gin.Context) {
 	var req dto.GeneratePlanRequest
 

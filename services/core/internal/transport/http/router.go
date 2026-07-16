@@ -5,7 +5,11 @@ import (
 	"core_service/internal/transport/http/middleware"
 	"log/slog"
 
+	_ "core_service/docs"
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func NewRouter(
@@ -25,7 +29,10 @@ func NewRouter(
 
 	router.Use(middleware.Logger(log))
 	router.Use(middleware.Recovery(log))
-
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
 	api := router.Group("/api/v1")
 	{
 		auth := api.Group("/auth")

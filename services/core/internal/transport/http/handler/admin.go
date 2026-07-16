@@ -40,6 +40,21 @@ func NewAdminHandler(service AdminService) *AdminHandler {
 	}
 }
 
+// ListUsers godoc
+// @Summary Получить список пользователей
+// @Description Возвращает список всех пользователей с пагинацией и фильтрацией
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Номер страницы" default(1)
+// @Param limit query int false "Количество на странице" default(20)
+// @Param role query string false "Фильтр по роли" Enums(admin, manager, employee)
+// @Param search query string false "Поиск по email или имени"
+// @Success 200 {object} dto.ListUsersResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users [get]
 func (h *AdminHandler) ListUsers(c *gin.Context) {
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -100,6 +115,20 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// GetUser godoc
+// @Summary Получить пользователя по ID
+// @Description Возвращает детальную информацию о пользователе
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID пользователя"
+// @Success 200 {object} dto.UserDetailsResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id} [get]
 func (h *AdminHandler) GetUser(c *gin.Context) {
 
 	id, err := uuid.Parse(c.Param("id"))
@@ -135,6 +164,22 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 	)
 }
 
+// UpdateRole godoc
+// @Summary Обновить роль пользователя
+// @Description Изменяет роль пользователя (только для админов)
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID пользователя"
+// @Param request body dto.UpdateRoleRequest true "Новая роль"
+// @Success 200 "OK"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 409 {object} dto.ErrorResponse "Нельзя удалить последнего админа"
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id}/role [patch]
 func (h *AdminHandler) UpdateRole(c *gin.Context) {
 	actorID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -182,6 +227,21 @@ func (h *AdminHandler) UpdateRole(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// AssignManager godoc
+// @Summary Назначить менеджера сотруднику
+// @Description Назначает менеджера для указанного сотрудника
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID сотрудника"
+// @Param request body dto.AssignManagerRequest true "ID менеджера"
+// @Success 200 "OK"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id}/manager [patch]
 func (h *AdminHandler) AssignManager(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -225,6 +285,21 @@ func (h *AdminHandler) AssignManager(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// RemoveManager godoc
+// @Summary Удалить менеджера у сотрудника
+// @Description Удаляет назначенного менеджера у сотрудника
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID сотрудника"
+// @Success 200 "OK"
+// @Failure 204 "No Content (менеджер не был назначен)"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id}/manager [delete]
 func (h *AdminHandler) RemoveManager(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -250,6 +325,20 @@ func (h *AdminHandler) RemoveManager(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// ListEmployeesByManager godoc
+// @Summary Получить список сотрудников менеджера
+// @Description Возвращает список сотрудников, закрепленных за менеджером
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID менеджера"
+// @Success 200 {array} dto.UserResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/managers/{id}/employees [get]
 func (h *AdminHandler) ListEmployeesByManager(c *gin.Context) {
 	managerID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -287,6 +376,20 @@ func (h *AdminHandler) ListEmployeesByManager(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// GetUserAvatar godoc
+// @Summary Получить аватар пользователя
+// @Description Возвращает аватар пользователя
+// @Tags Admin
+// @Accept json
+// @Produce image/jpeg, image/png, image/gif
+// @Security BearerAuth
+// @Param id path string true "ID пользователя"
+// @Success 200 {file} file "Аватар пользователя"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id}/avatar [get]
 func (h *AdminHandler) GetUserAvatar(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -315,6 +418,21 @@ func (h *AdminHandler) GetUserAvatar(c *gin.Context) {
 	}
 }
 
+// UpdatePosition godoc
+// @Summary Обновить должность пользователя
+// @Description Изменяет должность пользователя
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID пользователя"
+// @Param request body dto.UpdatePositionRequest true "Новая должность"
+// @Success 200 "OK"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id}/position [patch]
 func (h *AdminHandler) UpdatePosition(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -344,6 +462,20 @@ func (h *AdminHandler) UpdatePosition(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// GetEmployeeProfile godoc
+// @Summary Получить профиль сотрудника для админа
+// @Description Возвращает расширенный профиль сотрудника с навыками и планами
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID сотрудника"
+// @Success 200 {object} dto.EmployeeProfileResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id}/profile [get]
 func (h *AdminHandler) GetEmployeeProfile(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -410,6 +542,20 @@ func (h *AdminHandler) GetEmployeeProfile(c *gin.Context) {
 	})
 }
 
+// GetPlan godoc
+// @Summary Получить план по ID (админ)
+// @Description Возвращает детальную информацию о плане с задачами
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Success 200 {object} dto.PlanWithTasksResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/plans/{plan_id} [get]
 func (h *AdminHandler) GetPlan(c *gin.Context) {
 	planID, err := uuid.Parse(c.Param("plan_id"))
 	if err != nil {

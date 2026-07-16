@@ -41,3 +41,7 @@ type AssignManagerRequest struct {
 type UpdatePositionRequest struct {
 	Position string `json:"position"`
 }
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}

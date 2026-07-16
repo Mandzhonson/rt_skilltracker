@@ -32,6 +32,23 @@ func NewTaskHandler(service TaskService) *TaskHandler {
 	}
 }
 
+// Create godoc
+// @Summary Создать задачу
+// @Description Создает новую задачу в плане
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param plan_id path string true "ID плана"
+// @Param request body dto.CreateTaskRequest true "Данные для создания задачи"
+// @Success 201 {object} dto.CreateTaskResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 409 {object} dto.ErrorResponse "План архивирован"
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/plans/{plan_id}/tasks [post]
 func (h *TaskHandler) Create(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -88,6 +105,20 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	})
 }
 
+// GetByID godoc
+// @Summary Получить задачу по ID
+// @Description Возвращает детальную информацию о задаче
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param task_id path string true "ID задачи"
+// @Success 200 {object} dto.TaskResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/tasks/{task_id} [get]
 func (h *TaskHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("task_id"))
 	if err != nil {
@@ -129,6 +160,21 @@ func (h *TaskHandler) GetByID(c *gin.Context) {
 	})
 }
 
+// Delete godoc
+// @Summary Удалить задачу
+// @Description Удаляет задачу
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param task_id path string true "ID задачи"
+// @Success 204 "No Content"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/tasks/{task_id} [delete]
 func (h *TaskHandler) Delete(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -157,6 +203,22 @@ func (h *TaskHandler) Delete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// Update godoc
+// @Summary Обновить задачу
+// @Description Обновляет название и описание задачи
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param task_id path string true "ID задачи"
+// @Param request body dto.UpdateTaskRequest true "Данные для обновления"
+// @Success 200 "OK"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/tasks/{task_id} [patch]
 func (h *TaskHandler) Update(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -201,6 +263,22 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// UpdateStatus godoc
+// @Summary Обновить статус задачи
+// @Description Изменяет статус задачи (для сотрудника)
+// @Tags Employee
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param task_id path string true "ID задачи"
+// @Param request body dto.UpdateTaskStatusRequest true "Новый статус"
+// @Success 204 "No Content"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /employee/tasks/{task_id}/status [patch]
 func (h *TaskHandler) UpdateStatus(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {

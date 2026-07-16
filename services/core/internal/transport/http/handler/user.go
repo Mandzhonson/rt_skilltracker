@@ -38,6 +38,18 @@ func NewUserHandler(userService UserService) *UserHandler {
 	}
 }
 
+// CreateUser godoc
+// @Summary Регистрация пользователя
+// @Description Регистрация нового пользователя
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body dto.RegisterRequest true "Данные для регистрации"
+// @Success 201 {object} dto.RegisterResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 409 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /auth/register [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req dto.RegisterRequest
 
@@ -76,6 +88,18 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.RegisterResponse{ID: id.String()})
 }
 
+// GetProfile godoc
+// @Summary Получить профиль текущего пользователя
+// @Description Возвращает профиль авторизованного пользователя
+// @Tags User
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.ProfileResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /users/me [get]
 func (h *UserHandler) GetProfile(c *gin.Context) {
 	claims, ok := middleware.GetClaims(c)
 	if !ok {
@@ -110,6 +134,22 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	})
 }
 
+// UpdateProfile godoc
+// @Summary Обновить профиль
+// @Description Обновляет данные профиля пользователя
+// @Tags User
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.UpdateProfileRequest true "Данные для обновления"
+// @Success 200 {object} dto.ProfileResponse
+// @Failure 204 "No Content"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 409 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /users/me [patch]
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -159,6 +199,20 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	})
 }
 
+// UpdatePassword godoc
+// @Summary Сменить пароль
+// @Description Изменяет пароль пользователя
+// @Tags User
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.UpdatePasswordRequest true "Пароли"
+// @Success 200 "OK"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /users/me/password [patch]
 func (h *UserHandler) UpdatePassword(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -186,6 +240,20 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// SetAvatar godoc
+// @Summary Загрузить аватар
+// @Description Загружает аватар пользователя
+// @Tags User
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param avatar formData file true "Файл аватара"
+// @Success 200 "OK"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /users/me/avatar [put]
 func (h *UserHandler) SetAvatar(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -227,6 +295,19 @@ func (h *UserHandler) SetAvatar(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// DeleteAvatar godoc
+// @Summary Удалить аватар
+// @Description Удаляет аватар пользователя
+// @Tags User
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 "OK"
+// @Failure 204 "No Content"
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /users/me/avatar [delete]
 func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -252,6 +333,18 @@ func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// GetAvatar godoc
+// @Summary Получить аватар
+// @Description Возвращает аватар пользователя
+// @Tags User
+// @Accept json
+// @Produce image/jpeg, image/png, image/gif
+// @Security BearerAuth
+// @Success 200 {file} file "Аватар пользователя"
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /users/me/avatar [get]
 func (h *UserHandler) GetAvatar(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -281,6 +374,19 @@ func (h *UserHandler) GetAvatar(c *gin.Context) {
 	}
 }
 
+// GetEmployeesByManager godoc
+// @Summary Получить список сотрудников менеджера
+// @Description Возвращает список сотрудников, закрепленных за менеджером
+// @Tags Manager
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} dto.UserResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/employees [get]
 func (h *UserHandler) GetEmployeesByManager(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -316,6 +422,21 @@ func (h *UserHandler) GetEmployeesByManager(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// GetEmployeeProfile godoc
+// @Summary Получить профиль сотрудника (для менеджера)
+// @Description Возвращает расширенный профиль сотрудника с навыками и планами
+// @Tags Manager
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param employee_id path string true "ID сотрудника"
+// @Success 200 {object} dto.EmployeeProfileResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/employees/{employee_id} [get]
 func (h *UserHandler) GetEmployeeProfile(c *gin.Context) {
 
 	managerID, ok := middleware.GetUserID(c)
@@ -397,6 +518,21 @@ func (h *UserHandler) GetEmployeeProfile(c *gin.Context) {
 		})
 }
 
+// GetEmployeeAvatar godoc
+// @Summary Получить аватар сотрудника (для менеджера)
+// @Description Возвращает аватар сотрудника
+// @Tags Manager
+// @Accept json
+// @Produce image/jpeg, image/png, image/gif
+// @Security BearerAuth
+// @Param employee_id path string true "ID сотрудника"
+// @Success 200 {file} file "Аватар сотрудника"
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /manager/employees/{employee_id}/avatar [get]
 func (h *UserHandler) GetEmployeeAvatar(c *gin.Context) {
 	managerID, ok := middleware.GetUserID(c)
 	if !ok {
