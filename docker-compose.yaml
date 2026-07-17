@@ -18,7 +18,23 @@ services:
       - pgdata:/var/lib/postgresql
     networks:
       - skilltracker-network
-
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - skilltracker-network
+    volumes:
+      - ./services/core/migrations:/migrations
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable",
+        "up"
+      ]
   redis:
     image: redis:8.8-alpine
     container_name: skilltracker-redis
