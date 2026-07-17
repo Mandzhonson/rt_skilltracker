@@ -43,7 +43,6 @@ export const EmployeePlanDetail = () => {
       const response = await employeeAPI.getPlan(planId);
       const planData = response.data;
       
-      // Проверяем, архивирован ли план
       if (planData.status === 'archived') {
         setIsArchived(true);
         setPlan(planData);
@@ -231,7 +230,7 @@ export const EmployeePlanDetail = () => {
         <Navbar />
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="error-message">{error}</div>
-          <button onClick={() => navigate('/employee')} className="btn btn-primary mt-4">
+          <button onClick={() => navigate('/employee/plans')} className="btn btn-primary mt-4">
             Вернуться к планам
           </button>
         </div>
@@ -245,7 +244,7 @@ export const EmployeePlanDetail = () => {
         <Navbar />
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center">План не найден</div>
-          <button onClick={() => navigate('/employee')} className="btn btn-primary mt-4">
+          <button onClick={() => navigate('/employee/plans')} className="btn btn-primary mt-4">
             Вернуться к планам
           </button>
         </div>
@@ -259,7 +258,7 @@ export const EmployeePlanDetail = () => {
         <Navbar />
         <div className="max-w-6xl mx-auto px-4 py-8">
           <button
-            onClick={() => navigate('/employee')}
+            onClick={() => navigate('/employee/plans')}
             className="text-blue-600 hover:text-blue-800 mb-4 inline-block"
           >
             ← Назад к планам
@@ -270,7 +269,7 @@ export const EmployeePlanDetail = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-2">План архивирован</h2>
               <p className="text-gray-500">Этот план был архивирован менеджером и недоступен для просмотра</p>
               <button
-                onClick={() => navigate('/employee')}
+                onClick={() => navigate('/employee/plans')}
                 className="btn btn-primary mt-4"
               >
                 Вернуться к планам
@@ -288,7 +287,7 @@ export const EmployeePlanDetail = () => {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <button
-          onClick={() => navigate('/employee')}
+          onClick={() => navigate('/employee/plans')}
           className="text-blue-600 hover:text-blue-800 mb-4 inline-block"
         >
           ← Назад к планам
