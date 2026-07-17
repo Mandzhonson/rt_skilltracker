@@ -1,0 +1,19 @@
+import apiClient from '../utils/apiClient.js';
+
+export const managerAPI = {
+  getEmployees: () => apiClient.get('/manager/employees'),
+  getEmployeeProfile: (employeeId) => apiClient.get(`/manager/employees/${employeeId}/profile`),
+  getEmployeeAvatar: (employeeId) => apiClient.get(`/manager/employees/${employeeId}/avatar`, { responseType: 'blob' }),
+  listPlans: (params) => apiClient.get('/manager/plans', { params }),
+  createPlan: (data) => apiClient.post('/manager/plans', data),
+  createAIPlan: (data) => apiClient.post('/manager/plans/ai', data),
+  getPlan: (planId) => apiClient.get(`/manager/plans/${planId}`),
+  updatePlan: (planId, data) => apiClient.patch(`/manager/plans/${planId}`, data),
+  deletePlan: (planId) => apiClient.delete(`/manager/plans/${planId}`),
+  archivePlan: (planId) => apiClient.patch(`/manager/plans/${planId}/archive`),
+  getTest: (planId) => apiClient.get(`/manager/plans/${planId}/test`),
+  createTask: (planId, data) => apiClient.post(`/manager/plans/${planId}/tasks`, data),
+  getTask: (taskId) => apiClient.get(`/manager/tasks/${taskId}`),
+  updateTask: (taskId, data) => apiClient.patch(`/manager/tasks/${taskId}`, data),
+  deleteTask: (taskId) => apiClient.delete(`/manager/tasks/${taskId}`),
+};

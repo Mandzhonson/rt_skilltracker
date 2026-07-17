@@ -1,0 +1,120 @@
+services:
+  postgres:
+    image: postgres:18.4
+    container_name: skilltracker-db
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks:
+      - skilltracker-network
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - skilltracker-network
+    volumes:
+      - ./services/core/migrations:/migrations
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable",
+        "up"
+      ]
+  redis:
+    image: redis:8.8-alpine
+    container_name: skilltracker-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "${REDIS_PORT}:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skilltracker-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: skilltracker-minio
+    ports:
+      - "${MINIO_API_PORT}:9000"
+      - "9001:9001"  # MinIO Console
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_HOST=${MINIO_HOST}
+      - MINIO_DEFAULT_BUCKETS=${MINIO_BUCKET}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - skilltracker-network
+
+  core:
+    build: 
+      context: ./services/core
+      dockerfile: Dockerfile
+    container_name: skilltracker-core
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ".env"
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy      
+    networks:
+      - skilltracker-network
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: skilltracker-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - core
+    networks:
+      - skilltracker-network
+    restart: unless-stopped
+
+networks:
+  skilltracker-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
+  minio_data:
